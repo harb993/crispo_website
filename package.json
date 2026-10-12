@@ -1,0 +1,93 @@
+{
+  "name": "resto-pos",
+  "version": "1.0.0",
+  "description": "Fried Chicken Restaurant POS & Management System",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "postinstall": "cd node_modules/better-sqlite3 && npx prebuild-install --runtime electron --target 31.0.0",
+    "package": "npm run build && electron-builder --win",
+    "package:dir": "npm run build && electron-builder --dir",
+    "package:portable": "npm run build && electron-builder --win portable",
+    "lint": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.50.0",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.0.0",
+    "electron-log": "^5.1.0",
+    "exceljs": "^4.4.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-router-dom": "^6.23.0",
+    "recharts": "^2.15.4",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.0",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.3.0",
+    "vitest": "^1.6.0"
+  },
+  "build": {
+    "appId": "com.resto.pos",
+    "productName": "Crispo",
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+    "npmRebuild": false,
+    "files": [
+      "out/**/*",
+      "build/icon.ico",
+      "build/icon.png",
+      "build/receipt-logo.png",
+      "package.json"
+    ],
+    "extraResources": [
+      "build/icon.ico",
+      "build/icon.png",
+      "build/receipt-logo.png"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "portable": {
+      "splashImage": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
