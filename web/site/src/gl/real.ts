@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import type { Model, Quality } from './models'
 import type { CrustUniforms } from './materials'
+import { asset } from '../lib/route'
+import { fetchBinary } from '../lib/binary'
 
 /**
  * Real food, captured — the part of the stage that makes it look like chicken rather
@@ -39,6 +41,12 @@ export interface AssetSpec {
   /** Meshes only: add a thin clearcoat, for a scan whose roughness map lost the oil. */
   oil?: number
   /**
+   * Meshes only: a JSON file of the textures to attach after loading, for a GLB shipped
+   * without its images (see tools/build-demo.mjs). Keys are material maps — `map`,
+   * `normalMap`, `roughnessMap`, `metalnessMap`, `clearcoatMap` — plus `normalScale`.
+   */
+  textures?: string
+  /**
    * Meshes only, drumstick only: let the ritual cook it — the same real piece shown
    * marinated, floured and fried by regrading its own texture. On unless set false.
    */
@@ -48,12 +56,13 @@ export interface AssetSpec {
 export type Manifest = Partial<Record<Slot, AssetSpec>>
 
 const SPLAT = /\.(spz|ply|splat|ksplat|sog)(\?.*)?$/i
-const MESH = /\.(glb|gltf)(\?.*)?$/i
+// `.glb.txt` is a GLB as base64 text, for hosts that will not serve a .glb.
+const MESH = /\.(glb|gltf)(\.txt)?(\?.*)?$/i
 
 /** The manifest, or null when there is none — the normal state before anything is scanned. */
 export async function fetchManifest(): Promise<Manifest | null> {
   try {
-    const res = await fetch('/models/manifest.json', { cache: 'no-cache' })
+    const res = await fetch(asset('models/manifest.json'), { cache: 'no-cache' })
     if (!res.ok || !(res.headers.get('content-type') ?? '').includes('json')) return null
     const raw = await res.json()
     if (!raw || typeof raw !== 'object') return null
@@ -70,7 +79,7 @@ export async function fetchManifest(): Promise<Manifest | null> {
 }
 
 function resolveUrl(file: string): string {
-  return new URL(file, new URL('/models/', location.origin)).href
+  return new URL(file, new URL(asset('models/'), document.baseURI)).href
 }
 
 /**
@@ -184,17 +193,60 @@ function makeCookable(material: THREE.MeshStandardMaterial): CrustUniforms {
 // Meshes
 // ---------------------------------------------------------------------------
 
+/**
+ * Put a model's textures back on it from plain image files. Loaded as ordinary images,
+ * which every host allows, with glTF's conventions: not flipped, colour in sRGB, and —
+ * as three.js does for a model with no tangents — the normal map's green inverted.
+ */
+async function attachTextures(root: THREE.Object3D, listUrl: string): Promise<void> {
+  const list = await (await fetch(listUrl)).json()
+  const base = listUrl.slice(0, listUrl.lastIndexOf('/') + 1)
+  const loader = new THREE.TextureLoader()
+  const load = async (name: string, srgb: boolean) => {
+    const t = await loader.loadAsync(base + name)
+    t.flipY = false
+    t.wrapS = t.wrapT = THREE.RepeatWrapping
+    t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace
+    return t
+  }
+  const maps: Record<string, THREE.Texture> = {}
+  await Promise.all(['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'clearcoatMap'].map(async key => {
+    if (typeof list[key] === 'string') maps[key] = await load(list[key], key === 'map')
+  }))
+  root.traverse(obj => {
+    const mesh = obj as THREE.Mesh
+    if (!mesh.isMesh) return
+    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      const mat = m as THREE.MeshPhysicalMaterial
+      Object.assign(mat, maps)
+      if (maps.normalMap) {
+        const s = Number(list.normalScale) || 1
+        mat.normalScale.set(s, -s)
+      }
+      mat.needsUpdate = true
+    }
+  })
+}
+
 async function loadMesh(spec: AssetSpec, file: string, cookable: boolean): Promise<{ group: THREE.Group; cook?: CrustUniforms }> {
-  const [{ GLTFLoader }, { DRACOLoader }, { MeshoptDecoder }] = await Promise.all([
-    import('three/addons/loaders/GLTFLoader.js'),
-    import('three/addons/loaders/DRACOLoader.js'),
-    import('three/addons/libs/meshopt_decoder.module.js'),
-  ])
+  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js')
   const loader = new GLTFLoader()
-  loader.setDRACOLoader(new DRACOLoader().setDecoderPath('/draco/'))
-  loader.setMeshoptDecoder(MeshoptDecoder)
-  const gltf = await loader.loadAsync(resolveUrl(file))
+  // Both decoders are WebAssembly. A build for a host that forbids it (the demo) ships
+  // models without either compression and leaves them out.
+  if (import.meta.env.VITE_NO_WASM !== '1') {
+    const [{ DRACOLoader }, { MeshoptDecoder }] = await Promise.all([
+      import('three/addons/loaders/DRACOLoader.js'),
+      import('three/addons/libs/meshopt_decoder.module.js'),
+    ])
+    loader.setDRACOLoader(new DRACOLoader().setDecoderPath(asset('draco/')))
+    loader.setMeshoptDecoder(MeshoptDecoder)
+  }
+  const url = resolveUrl(file)
+  const gltf = /\.txt(\?.*)?$/i.test(file)
+    ? await loader.parseAsync(await fetchBinary(url), url.slice(0, url.lastIndexOf('/') + 1))
+    : await loader.loadAsync(url)
   const root = gltf.scene
+  if (spec.textures) await attachTextures(root, resolveUrl(spec.textures))
 
   // Scans usually arrive as plain standard materials. Oil is a thin glossy film over
   // a rough crust — which is exactly what a clearcoat is — so `oil` adds one.

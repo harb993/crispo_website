@@ -41,6 +41,14 @@ accepts everything on a timer; **never** run `--demo` on the real server.
 For working on the site with hot reload, keep `npm run demo` running and in a second
 terminal `npm run dev` (Vite on :5173, `/api` proxied to the relay).
 
+To try it on a phone without running anything, build the **static demo** — the same
+site with a pretend kitchen running in the browser (orders never leave it), clearly
+labelled تجريبي, for any static host:
+
+```bash
+npm run build:demo   # → dist-demo/ (relative paths, #track-<id> links, no WebAssembly)
+```
+
 ```bash
 npm test             # relay tests (pricing, tampering, idempotency, auth, expiry)
 npm run typecheck    # the site's TypeScript

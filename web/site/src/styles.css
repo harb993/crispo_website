@@ -55,6 +55,9 @@ body[data-theme='red'] {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Also set in CSS, not only on <html dir>: the demo build is published inside a
+     document someone else writes, and an LTR page turns every overlay inside out. */
+  direction: rtl;
 }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
@@ -205,8 +208,8 @@ body.is-loaded .loader { pointer-events: none; }
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 50;
-  height: var(--nav-h);
-  padding: 0 var(--gutter);
+  height: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -243,19 +246,23 @@ body.is-loaded .loader { pointer-events: none; }
   transition: transform 0.5s var(--ease);
 }
 .nav__links a:hover::after { transform: scaleX(1); transform-origin: right; }
-.nav__end { display: flex; align-items: center; gap: 12px; }
+.nav__end { display: flex; align-items: center; gap: 12px; min-width: 0; }
 
 .status {
   display: flex;
   align-items: center;
   gap: 8px;
   height: 40px;
+  min-width: 0;
   padding: 0 16px;
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 13px;
   white-space: nowrap;
 }
+/* On a phone the pill gives way before the cart button does. */
+.status__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.nav__cart, .nav__brand { flex: none; }
 .status__dot { width: 8px; height: 8px; border-radius: 50%; background: #8b7d72; flex: none; }
 .status[data-status='open'] .status__dot { background: var(--ok); animation: pulse 2s infinite; }
 .status[data-status='closed'] .status__dot { background: var(--red-hot); }
@@ -876,7 +883,7 @@ body.is-loaded .loader { pointer-events: none; }
 .drawer__head { display: flex; align-items: center; gap: 12px; padding: 22px 26px; border-bottom: 1px solid rgba(18, 11, 9, 0.1); }
 .drawer__head h3 { flex: 1; font-size: 22px; font-weight: 900; }
 .drawer__view { flex: 1; overflow: auto; padding: 8px 26px 20px; overscroll-behavior: contain; }
-.drawer__foot { padding: 20px 26px 26px; border-top: 1px solid rgba(18, 11, 9, 0.1); background: var(--paper); }
+.drawer__foot { padding: 20px 26px calc(26px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(18, 11, 9, 0.1); background: var(--paper); }
 .drawer__note { font-size: 12.5px; color: rgba(18, 11, 9, 0.55); margin: -4px 0 14px; }
 
 .cart li {
@@ -1017,7 +1024,7 @@ body.is-loaded .loader { pointer-events: none; }
 
 .track-pill {
   position: fixed;
-  bottom: 22px;
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   z-index: 60;
   transform: translateX(-50%);
@@ -1036,7 +1043,7 @@ body.is-loaded .loader { pointer-events: none; }
 
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   z-index: 95;
   transform: translate(-50%, 200%);
@@ -1100,7 +1107,7 @@ body.is-loaded .loader { pointer-events: none; }
   .btn--xl { height: 66px; font-size: 18px; padding: 0 34px; }
 
   .sheet { place-items: end center; padding: 0; }
-  .sheet__panel { border-radius: 26px 26px 0 0; padding: 28px 22px 22px; }
+  .sheet__panel { border-radius: 26px 26px 0 0; padding: 28px 22px calc(22px + env(safe-area-inset-bottom, 0px)); }
   .track__steps { grid-auto-flow: row; gap: 0; }
   .track__steps li { padding: 0 34px 22px 0; }
   .track__steps li::before { top: 16px; bottom: 0; right: 7px; left: auto; width: 2px; height: auto; }

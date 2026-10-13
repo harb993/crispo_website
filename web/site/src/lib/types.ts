@@ -30,6 +30,8 @@ export interface Shop {
   updatedAt: string | null
   /** True when the relay could not be reached and the bundled sample menu is shown. */
   preview?: boolean
+  /** The demo build: a pretend kitchen in the browser. */
+  demo?: boolean
 }
 
 export type OrderStatus =

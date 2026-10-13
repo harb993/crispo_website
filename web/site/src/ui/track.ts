@@ -4,6 +4,7 @@ import { escapeHtml, money, store } from '../lib/format'
 import { crunch } from '../lib/sound'
 import { state } from '../state'
 import { FINAL, type OrderStatus, type PublicOrder } from '../lib/types'
+import { trackIdFromLocation, pushTrack, pushHome } from '../lib/route'
 
 const root = () => document.querySelector<HTMLElement>('#track')!
 const pill = () => document.querySelector<HTMLElement>('.track-pill')!
@@ -146,7 +147,7 @@ export function openTrack(id: string, initial?: PublicOrder): void {
   el.hidden = false
   pill().hidden = true
   document.documentElement.classList.add('is-locked')
-  if (location.pathname !== `/track/${id}`) history.pushState({ track: id }, '', `/track/${id}`)
+  pushTrack(id)
   if (initial) render(initial)
   else {
     el.querySelector('.track__title')!.textContent = 'بنجيب حالة طلبك…'
@@ -163,7 +164,7 @@ function closeTrack(): void {
     opacity: 0, duration: 0.35, onComplete: () => {
       el.hidden = true
       document.documentElement.classList.remove('is-locked')
-      if (location.pathname.startsWith('/track/')) history.pushState({}, '', '/')
+      pushHome()
       void poll()
     },
   })
@@ -179,15 +180,15 @@ export function initTrack(): void {
   pill().addEventListener('click', () => currentId && openTrack(currentId))
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !el.hidden) closeTrack() })
   addEventListener('popstate', () => {
-    const m = /^\/track\/([A-Za-z0-9_-]+)/.exec(location.pathname)
-    if (m) openTrack(m[1])
+    const id = trackIdFromLocation()
+    if (id) openTrack(id)
     else if (!el.hidden) closeTrack()
   })
   document.addEventListener('visibilitychange', () => { if (!document.hidden && currentId) void poll() })
 
   // Arriving from a tracking link, or coming back with an order still on the go.
-  const m = /^\/track\/([A-Za-z0-9_-]+)/.exec(location.pathname)
-  if (m) openTrack(m[1])
+  const linked = trackIdFromLocation()
+  if (linked) openTrack(linked)
   else {
     const saved = store.get<string | null>(ACTIVE, null)
     if (saved) {

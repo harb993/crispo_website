@@ -14,6 +14,7 @@ export function closedMessage(shop: Shop): string {
 }
 
 function shortStatus(shop: Shop): string {
+  if (shop.demo) return 'تجريبي · مطبخ وهمي'
   if (shop.open) return `المطبخ شغّال · ~${shop.snapshot?.eta.delivery ?? 40} د`
   switch (shop.reason) {
     case 'preview': return 'معاينة'
@@ -33,7 +34,13 @@ export function initStatus(): void {
     const pill = document.querySelector<HTMLElement>('.status')!
     pill.dataset.status = shop.open ? 'open' : 'closed'
     pill.querySelector('.status__text')!.textContent = shortStatus(shop)
-    pill.title = shop.open ? 'طلبك بيوصل لشاشة الكاشير على طول' : closedMessage(shop)
+    pill.title = shop.demo
+      ? 'دي نسخة للتجربة: الطلبات بتتسجل في المتصفح ده بس ومش بتوصل للمطعم'
+      : shop.open ? 'طلبك بيوصل لشاشة الكاشير على طول' : closedMessage(shop)
+    const note = document.querySelector<HTMLElement>('.drawer__note')
+    if (note && shop.demo) note.textContent = 'نسخة تجريبية: الطلب ده مش هيوصل للمطعم — المطبخ هنا وهمي وبيمشّي الطلب لوحده.'
+    const codeLabel = document.querySelector<HTMLElement>('.track__code-label')
+    if (codeLabel && shop.demo) codeLabel.textContent = 'طلب تجريبي رقم'
 
     document.querySelector<HTMLElement>('.preview-note')!.hidden = !shop.preview
 

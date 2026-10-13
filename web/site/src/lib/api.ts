@@ -1,16 +1,14 @@
 import type { Shop, PublicOrder, Snapshot } from './types'
+import { ApiError } from './api-error'
+import { DEMO } from './route'
+
+export { ApiError }
 
 /**
  * The relay is normally the same origin that served this page. VITE_API_BASE points
  * elsewhere for a site hosted apart from it.
  */
 const BASE = String(import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
-
-export class ApiError extends Error {
-  constructor(message: string, readonly code: string, readonly status: number, readonly body: any) {
-    super(message)
-  }
-}
 
 async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 12_000): Promise<T> {
   const ctrl = new AbortController()
@@ -34,7 +32,12 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 12_0
   return body as T
 }
 
+// The demo build swaps the network for the in-browser kitchen. A constant, so a normal
+// build drops the demo module entirely.
+const demo = () => import('./demo')
+
 export async function fetchShop(): Promise<Shop> {
+  if (DEMO) return (await demo()).fetchShop()
   const body = await request<{ open: boolean; reason: Shop['reason']; snapshot: Snapshot | null; updatedAt: string | null }>('/api/shop')
   return { open: body.open, reason: body.reason, snapshot: body.snapshot, updatedAt: body.updatedAt }
 }
@@ -49,11 +52,13 @@ export interface OrderRequest {
 }
 
 export async function placeOrder(order: OrderRequest): Promise<PublicOrder> {
+  if (DEMO) return (await demo()).placeOrder(order)
   const body = await request<{ order: PublicOrder }>('/api/orders', { method: 'POST', body: JSON.stringify(order) }, 20_000)
   return body.order
 }
 
 export async function fetchOrder(id: string): Promise<PublicOrder> {
+  if (DEMO) return (await demo()).fetchOrder(id)
   const body = await request<{ order: PublicOrder }>(`/api/orders/${encodeURIComponent(id)}`)
   return body.order
 }

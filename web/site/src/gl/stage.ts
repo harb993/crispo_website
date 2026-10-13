@@ -3,6 +3,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { BUILDERS, type Model, type ModelName, type Quality } from './models'
 import { crustMaterial, type CrustUniforms } from './materials'
 import { fetchManifest, loadReal, type Manifest, type Slot } from './real'
+import { asset } from '../lib/route'
+import { fetchBinary } from '../lib/binary'
 
 /**
  * What an anchor can ask for: one of the cast, or 'ritual' — the drumstick in the
@@ -112,8 +114,20 @@ export class Stage {
     const pmrem = new THREE.PMREMGenerator(r)
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     this.scene.environmentIntensity = 0.55
-    void import('three/addons/loaders/EXRLoader.js')
-      .then(({ EXRLoader }) => new EXRLoader().loadAsync('/env/studio.exr'))
+    const envFile = import.meta.env.VITE_TEXT_ASSETS === '1' ? 'env/studio.exr.txt' : 'env/studio.exr'
+    void Promise.all([import('three/addons/loaders/EXRLoader.js'), fetchBinary(asset(envFile))])
+      .then(([{ EXRLoader }, buffer]) => {
+        // parse() rather than load(), so the bytes can come from either form of the file.
+        const d = new EXRLoader().parse(buffer) as any
+        const tex = new THREE.DataTexture(d.data, d.width, d.height, d.format, d.type)
+        tex.colorSpace = d.colorSpace ?? THREE.LinearSRGBColorSpace
+        tex.flipY = d.flipY ?? false
+        tex.minFilter = THREE.LinearFilter
+        tex.magFilter = THREE.LinearFilter
+        tex.generateMipmaps = false
+        tex.needsUpdate = true
+        return tex
+      })
       .then(tex => {
         tex.mapping = THREE.EquirectangularReflectionMapping
         const env = pmrem.fromEquirectangular(tex).texture

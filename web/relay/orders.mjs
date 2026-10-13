@@ -15,7 +15,22 @@
  * the prices come from the snapshot.
  */
 
-import { randomBytes } from 'node:crypto'
+/**
+ * Plain JavaScript with no Node imports, on purpose: the website's demo build runs this
+ * same file in the browser, so the demo prices and validates exactly like the relay.
+ * Web Crypto's getRandomValues exists in both (Node 20+ and every browser).
+ */
+function randomBytes(n) {
+  const b = new Uint8Array(n)
+  globalThis.crypto.getRandomValues(b)
+  return b
+}
+
+function base64url(bytes) {
+  let s = ''
+  for (const x of bytes) s += String.fromCharCode(x)
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
 
 /** Every state an order can be in, in the order it normally moves through them. */
 export const STATUSES = [
@@ -87,7 +102,7 @@ export function cleanText(raw, max) {
 
 /** 128 random bits. The tracking link is the only key to an order, so it must not be guessable. */
 export function newOrderId() {
-  return randomBytes(16).toString('base64url')
+  return base64url(randomBytes(16))
 }
 
 /**
@@ -99,7 +114,7 @@ export function newOrderCode(isTaken) {
     const code = `W-${String(1000 + Math.floor(Math.random() * 9000))}`
     if (!isTaken(code)) return code
   }
-  return `W-${randomBytes(3).toString('hex').toUpperCase()}`
+  return `W-${[...randomBytes(3)].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase()}`
 }
 
 function fail(code, message, field) {

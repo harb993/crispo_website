@@ -79,6 +79,11 @@ function loader() {
 }
 
 async function boot(): Promise<void> {
+  // Set here rather than on <body> in the markup: the demo build is published as a
+  // fragment inside someone else's document, so the page cannot rely on its own tag.
+  document.body.classList.add('is-loading')
+  document.documentElement.lang = 'ar'
+  document.documentElement.dir = 'rtl'
   document.body.dataset.theme = 'ink'
   const canvas = document.querySelector<HTMLCanvasElement>('canvas.gl')!
   const stage = webglAvailable() ? new Stage(canvas) : null
