@@ -171,7 +171,7 @@ export function seedDemoData(db: Database.Database): void {
     // has nothing to show: no order history, no regulars, no lifetime spend.
     const firstNames = ['أحمد', 'محمد', 'مصطفى', 'ياسمين', 'هبة', 'عمرو', 'سارة', 'خالد', 'منى', 'طارق']
     const lastNames = ['علي', 'حسن', 'إبراهيم', 'سمير', 'فؤاد', 'عبد الله', 'رشدي']
-    const streets = ['شارع 9', 'شارع الهرم', 'ميدان الساعة', 'شارع النصر', 'شارع الجمهورية']
+    const streets = ['الحي اللاتيني', 'شارع الكورنيش', 'ميدان الساعة', 'شارع النصر', 'شارع الجمهورية']
     const customerPool = Array.from({ length: 26 }, (_, i) => ({
       name: `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`,
       phone: '01' + pick(['0', '1', '2', '5']) +

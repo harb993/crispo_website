@@ -6,7 +6,7 @@
  */
 
 export const DEMO_SNAPSHOT = {
-  business: { name: 'Crispo', phone: '0100 000 0000', address: 'القاهرة', currency: 'ج.م' },
+  business: { name: 'Crispo', phone: '0100 000 0000', address: 'مدينة العلمين، مطروح', currency: 'ج.م' },
   eta: { delivery: 40, takeaway: 20 },
   takeaway: true,
   categories: [
@@ -38,11 +38,11 @@ export const DEMO_SNAPSHOT = {
     { id: 16, categoryId: 4, name: 'مولتن تشوكلت لافا كيك', price: 65, description: 'كيك الشوكولاتة الساخن بقلب سايح', variants: [] },
   ],
   areas: [
-    { id: 1, name: 'وسط البلد', fee: 15 },
-    { id: 2, name: 'المعادي', fee: 25 },
-    { id: 3, name: 'مدينة نصر', fee: 20 },
-    { id: 4, name: 'المهندسين', fee: 30 },
-    { id: 5, name: 'الدقي', fee: 25 },
-    { id: 6, name: 'حلوان', fee: 35 },
+    { id: 1, name: 'مدينة العلمين', fee: 15 },
+    { id: 2, name: 'العلمين الجديدة', fee: 25 },
+    { id: 3, name: 'الحي اللاتيني', fee: 25 },
+    { id: 4, name: 'أبراج العلمين', fee: 25 },
+    { id: 5, name: 'مارينا العلمين', fee: 30 },
+    { id: 6, name: 'سيدي عبد الرحمن', fee: 45 },
   ],
 }

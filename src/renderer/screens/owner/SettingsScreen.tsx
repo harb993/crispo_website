@@ -500,7 +500,7 @@ function SettingsBody() {
           </div>
           <div className="form-group">
             <label className="form-label">العنوان (يظهر في الفاتورة)</label>
-            <input className="input" value={settings.business_address || ''} onChange={(e) => update('business_address', e.target.value)} placeholder="شارع النصر، المعادي، القاهرة" />
+            <input className="input" value={settings.business_address || ''} onChange={(e) => update('business_address', e.target.value)} placeholder="اسم الشارع، مدينة العلمين، مطروح" />
           </div>
           <div className="form-group">
             <label className="form-label">رقم الهاتف والتواصل</label>

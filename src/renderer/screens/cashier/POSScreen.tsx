@@ -966,7 +966,7 @@ export default function POSScreen() {
                   style={{ width: 68, height: 68, objectFit: 'contain', margin: '0 auto 6px', display: 'block' }}
                 />
                 <h2>{settings.business_name || 'Crispo Fried Chicken'}</h2>
-                <p style={{ fontSize: 11, color: '#4b5563' }}>{settings.business_address || 'القاهرة — مصر'}</p>
+                <p style={{ fontSize: 11, color: '#4b5563' }}>{settings.business_address || 'مدينة العلمين — مطروح'}</p>
                 <p style={{ fontSize: 11, color: '#4b5563' }}>هاتف: {settings.business_phone || '+20 100 123 4567'}</p>
                 <div className="receipt-divider" />
                 <p style={{ fontSize: 13, fontWeight: 800 }}>فاتورة ضريبية مبسطة {lastCompletedOrder.invoiceNumber}</p>

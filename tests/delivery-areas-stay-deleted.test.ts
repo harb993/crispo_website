@@ -35,13 +35,13 @@ describe('the example areas', () => {
 
 describe('deleting one', () => {
   it('keeps it gone across a restart', () => {
-    expect(areas()).toContain('الدقي')
+    expect(areas()).toContain('مارينا العلمين')
 
-    getDb().prepare('DELETE FROM delivery_areas WHERE area_name = ?').run('الدقي')
-    expect(areas()).not.toContain('الدقي')
+    getDb().prepare('DELETE FROM delivery_areas WHERE area_name = ?').run('مارينا العلمين')
+    expect(areas()).not.toContain('مارينا العلمين')
 
     restart()
-    expect(areas(), 'الدقي must not come back').not.toContain('الدقي')
+    expect(areas(), 'مارينا العلمين must not come back').not.toContain('مارينا العلمين')
   })
 })
 

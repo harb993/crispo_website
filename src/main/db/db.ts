@@ -322,12 +322,14 @@ export function initDatabase(): Database.Database {
   }
 
   // Seed the example delivery areas — ONCE, on a database that has never had any.
+  // They are places around the shop (مدينة العلمين، مطروح), for the owner to correct
+  // rather than to delete their way out of.
   //
   // "If the table is empty" was not the same question, and the difference deleted a
   // shop's work: the owner removed the areas they do not deliver to, restarted, and
-  // every one of them was back, fees and all. Cairo districts this restaurant has
-  // never heard of, reappearing on the counter screen after being deleted by hand.
-  // Observed here — الدقي came back twice.
+  // every one of them was back, fees and all. The examples were Cairo districts then,
+  // which this restaurant has never delivered to, reappearing on the counter screen
+  // after being deleted by hand. Observed here — الدقي came back twice.
   //
   // Its own marker rather than the menu's: they are set at different moments during a
   // first run, and sharing one made whichever ran second think it had already had its
@@ -338,12 +340,12 @@ export function initDatabase(): Database.Database {
     if (areaCount.count === 0) {
       const insertArea = db.prepare('INSERT INTO delivery_areas (area_name, delivery_fee) VALUES (?, ?)')
       const areas = [
-        { name: 'وسط البلد', fee: 15 },
-        { name: 'المعادي', fee: 25 },
-        { name: 'مدينة نصر', fee: 20 },
-        { name: 'المهندسين', fee: 30 },
-        { name: 'الدقي', fee: 25 },
-        { name: 'حلوان', fee: 35 },
+        { name: 'مدينة العلمين', fee: 15 },
+        { name: 'العلمين الجديدة', fee: 25 },
+        { name: 'الحي اللاتيني', fee: 25 },
+        { name: 'أبراج العلمين', fee: 25 },
+        { name: 'مارينا العلمين', fee: 30 },
+        { name: 'سيدي عبد الرحمن', fee: 45 },
       ]
       for (const a of areas) {
         insertArea.run(a.name, a.fee)
