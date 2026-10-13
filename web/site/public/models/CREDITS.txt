@@ -1,0 +1,11 @@
+drumstick.glb, drumstick-lite.glb
+
+This work is based on "fried chicken drumstick 3d model"
+(https://sketchfab.com/3d-models/fried-chicken-drumstick-3d-model-d9cf856b309246dea408a519ca37a91d)
+by grodan (https://sketchfab.com/zhaoqinzzq), licensed under CC-BY-4.0
+(http://creativecommons.org/licenses/by/4.0/).
+
+Changes: re-oriented; simplified from 1.39M to 300k / 110k triangles; ambient
+occlusion baked into vertex colours; colour regraded; normal, roughness and
+clearcoat maps derived; geometry (meshopt) and textures (WebP) compressed.
+Produced with web/tools/prepare-model.mjs.

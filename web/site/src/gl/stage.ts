@@ -76,6 +76,10 @@ export class Stage {
   private height = 1
   private visible = true
   private clock = new THREE.Clock()
+  private rim: THREE.DirectionalLight | null = null
+  private static RIM_DRAWN = new THREE.Color('#ff2638')
+  // A real piece under a pure brand-red rim reads pink; warm it towards fryer-orange.
+  private static RIM_REAL = new THREE.Color('#ff6a2a')
   /** Adaptive resolution: frames are timed, and a GPU that cannot keep up gets fewer pixels. */
   private dpr = 1
   private frameTimes: number[] = []
@@ -126,6 +130,7 @@ export class Stage {
     const key = new THREE.DirectionalLight('#ffe0bd', 2.7)
     key.position.set(3.5, 4.5, 5)
     const rim = new THREE.DirectionalLight('#ff2638', 5.5)
+    this.rim = rim
     rim.position.set(-4.5, 1.5, -3.5)
     const rim2 = new THREE.DirectionalLight('#ff8a3d', 2.2)
     rim2.position.set(4, -1, -4)
@@ -190,7 +195,11 @@ export class Stage {
    */
   private resolve(slot: StageSlot): Model {
     if (slot === 'ritual') {
-      if (!this.realRitual()) return this.getModel('drumstick')
+      if (!this.realRitual()) {
+        // One real fried piece can be cooked by shader; otherwise the drawn one is.
+        const real = this.real.get('drumstick')
+        return real?.cook ? real : this.getModel('drumstick')
+      }
       const c = this.cook
       const stage: Slot = c.fry > 0.5 ? 'drumstick' : c.coat > 0.5 ? 'drumstick-dredged' : 'drumstick-raw'
       return this.real.get(stage)!
@@ -228,7 +237,7 @@ export class Stage {
     let loaded = 0
     for (const [slot, spec] of entries) {
       try {
-        this.real.set(slot, await loadReal(slot, spec, this.renderer, this.scene))
+        this.real.set(slot, await loadReal(slot, spec, this.renderer, this.scene, this.quality))
         loaded++
       } catch (err) {
         console.warn(`[stage] capture for ${slot} did not load (${spec.file}):`, err)
@@ -399,6 +408,11 @@ export class Stage {
     this.spinGroup.rotation.y = this.spin
 
     for (const u of m?.timed ?? []) u.uTime.value = t
+    if (this.rim) {
+      const real = !!m?.real
+      this.rim.color.lerp(real ? Stage.RIM_REAL : Stage.RIM_DRAWN, k)
+      this.rim.intensity += ((real ? 3.2 : 5.5) - this.rim.intensity) * k
+    }
 
     this.burst *= Math.exp(-1.6 * dt)
     this.updateCrumbs(t, dt)

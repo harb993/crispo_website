@@ -275,6 +275,14 @@ describe('serving the site', () => {
     assert.equal((await fetch(`${base}/models/a.glb`)).headers.get('content-type'), 'model/gltf-binary')
     assert.equal((await fetch(`${base}/models/b.wasm`)).headers.get('content-type'), 'application/wasm')
   })
+
+  test('a model the browser already has is a 304, not the whole file again', async () => {
+    const first = await fetch(`${base}/models/a.glb`)
+    const etag = first.headers.get('etag')
+    assert.ok(etag)
+    const again = await fetch(`${base}/models/a.glb`, { headers: { 'if-none-match': etag } })
+    assert.equal(again.status, 304)
+  })
 })
 
 describe('the till side', () => {

@@ -1,1 +1,8 @@
-{}
+{
+  "drumstick": {
+    "file": "drumstick.glb",
+    "fileLite": "drumstick-lite.glb",
+    "tilt": -0.62,
+    "spin": 0.32
+  }
+}

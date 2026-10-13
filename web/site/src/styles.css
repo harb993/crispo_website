@@ -782,6 +782,9 @@ body.is-loaded .loader { pointer-events: none; }
 }
 .footer__bottom { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
 .footer__bottom .serif { font-size: 17px; }
+.footer__bottom { gap: 16px; flex-wrap: wrap; align-items: baseline; }
+.footer__credit { font-size: 11.5px; opacity: 0.75; }
+.footer__credit a { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------- Sheet (item options) ---------- */
 

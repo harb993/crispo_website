@@ -414,9 +414,19 @@ export function createRelay(options = {}) {
     const ext = path.extname(file).toLowerCase()
     // Vite fingerprints everything under /assets, so those can be cached for good.
     const immutable = rel.startsWith('/assets/')
+    // Everything else is revalidated — and the 3D models are megabytes, so a returning
+    // visitor must get a 304 rather than the whole file again.
+    const stat = fs.statSync(file)
+    const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`
+    if (!immutable && req.headers['if-none-match'] === etag) {
+      res.writeHead(304, { etag, 'cache-control': 'no-cache' })
+      return res.end()
+    }
     res.writeHead(200, {
       'content-type': MIME[ext] || 'application/octet-stream',
       'cache-control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
+      'content-length': stat.size,
+      etag,
       ...SECURITY_HEADERS,
       ...(ext === '.html' ? { 'content-security-policy': CSP } : {}),
     })

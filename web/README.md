@@ -19,10 +19,11 @@ The design is written up in [`../req/10-online-ordering.md`](../req/10-online-or
 
 ## Making the chicken look real
 
-The drumstick, burger, fries and can are drawn by code until you give the site a
-**capture of the real food** — a Gaussian splat or a photogrammetry mesh shot with a
-phone. Drop it in `site/public/models/` with a `manifest.json` and it replaces the
-drawing everywhere. How to shoot, clean up and install one: [`SCANNING.md`](SCANNING.md).
+The hero drumstick is a real 3D model (`site/public/models/`, based on a CC BY 4.0
+model by grodan — see `CREDITS.txt`), processed by `npm run model` (AO bake, regrade,
+derived maps, compression). The burger, fries and can are still drawn by code until
+they get models of their own. To add or replace one — a model, or a Gaussian-splat
+capture of your own food — see [`SCANNING.md`](SCANNING.md).
 
 ## Run it locally (no restaurant needed)
 

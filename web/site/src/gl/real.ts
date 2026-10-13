@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-import type { Model } from './models'
+import type { Model, Quality } from './models'
+import type { CrustUniforms } from './materials'
 
 /**
  * Real food, captured — the part of the stage that makes it look like chicken rather
@@ -23,6 +24,8 @@ export const SLOTS: Slot[] = ['drumstick', 'drumstick-raw', 'drumstick-dredged',
 export interface AssetSpec {
   /** Relative to /models/, or an absolute URL (a CDN). */
   file: string
+  /** A lighter version for phones and slow GPUs (fewer triangles, smaller textures). */
+  fileLite?: string
   /** Euler rotation in degrees, applied first — scans come out of the apps every which way up. */
   rotate?: [number, number, number]
   /** Multiplies the automatic fit. */
@@ -35,6 +38,11 @@ export interface AssetSpec {
   spin?: number
   /** Meshes only: add a thin clearcoat, for a scan whose roughness map lost the oil. */
   oil?: number
+  /**
+   * Meshes only, drumstick only: let the ritual cook it — the same real piece shown
+   * marinated, floured and fried by regrading its own texture. On unless set false.
+   */
+  cook?: boolean
 }
 
 export type Manifest = Partial<Record<Slot, AssetSpec>>
@@ -52,7 +60,8 @@ export async function fetchManifest(): Promise<Manifest | null> {
     const out: Manifest = {}
     for (const slot of SLOTS) {
       const spec = raw[slot]
-      if (spec && typeof spec.file === 'string' && (SPLAT.test(spec.file) || MESH.test(spec.file))) out[slot] = spec
+      const ok = (f: unknown) => typeof f === 'string' && (SPLAT.test(f) || MESH.test(f))
+      if (spec && ok(spec.file) && (spec.fileLite === undefined || ok(spec.fileLite))) out[slot] = spec
     }
     return Object.keys(out).length ? out : null
   } catch {
@@ -114,10 +123,68 @@ async function loadSplat(spec: AssetSpec, renderer: THREE.WebGLRenderer, scene: 
 }
 
 // ---------------------------------------------------------------------------
+// Cooking a real piece
+// ---------------------------------------------------------------------------
+
+const lin = (hex: string) => ({ value: new THREE.Color(hex) })
+
+/**
+ * The ritual, on the real drumstick.
+ *
+ * The capture is the FRIED piece; marinated and floured are worked out from it. Its
+ * own brightness says where the peaks and cracks are, so each stage keeps the real
+ * relief and only changes what it is made of: pale flesh under a red spice rub, then
+ * a matte white dredge, then — as uFry rises — back to the captured gold, peaks
+ * first. Same uniforms as the drawn drumstick, so the page drives both the same way.
+ */
+function makeCookable(material: THREE.MeshStandardMaterial): CrustUniforms {
+  const uniforms = {
+    uTime: { value: 0 },
+    uCoat: { value: 1 },
+    uFry: { value: 1 },
+    uMarinade: { value: 1 },
+    uRawTone: lin('#e7b9a1'),
+    uSpiceTone: lin('#c2502a'),
+    uFlourTone: lin('#f1e7d6'),
+  }
+  material.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, uniforms)
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        uniform float uCoat, uFry, uMarinade;
+        uniform vec3 uRawTone, uSpiceTone, uFlourTone;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        vec3 friedC = diffuseColor.rgb;
+        // Linear luminance of the fried colour, opened up to roughly 0..1.
+        float cookT = clamp(sqrt(dot(friedC, vec3(0.2126, 0.7152, 0.0722))) * 1.7, 0.0, 1.0);
+        vec3 rawC = uRawTone * mix(0.62, 1.0, cookT);
+        vec3 rubC = mix(uRawTone, uSpiceTone, 0.6 + 0.3 * (1.0 - cookT)) * mix(0.55, 1.0, cookT);
+        vec3 flourC = uFlourTone * mix(0.6, 1.0, cookT);
+        vec3 stageC = mix(mix(rawC, rubC, uMarinade), flourC, uCoat);
+        #ifdef USE_COLOR
+          // The baked occlusion lives in the vertex colours — keep the cracks dark in
+          // every stage, not only the fried one.
+          stageC *= mix(vec3(1.0), vec3(dot(vColor.rgb, vec3(0.333))), 0.85);
+        #endif
+        float browned = clamp(pow(uFry, 0.6) * 1.35 - (1.0 - cookT) * 0.35, 0.0, 1.0);
+        diffuseColor.rgb = mix(stageC, friedC, browned);`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        float stageRough = mix(mix(0.62, 0.36, uMarinade), 0.93, uCoat);
+        roughnessFactor = mix(stageRough, roughnessFactor, browned);`)
+      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
+        #ifdef USE_CLEARCOAT
+          material.clearcoat *= mix(uMarinade * 0.5 * (1.0 - uCoat), 1.0, browned);
+        #endif`)
+  }
+  material.customProgramCacheKey = () => 'real-cook'
+  return uniforms
+}
+
+// ---------------------------------------------------------------------------
 // Meshes
 // ---------------------------------------------------------------------------
 
-async function loadMesh(spec: AssetSpec): Promise<THREE.Group> {
+async function loadMesh(spec: AssetSpec, file: string, cookable: boolean): Promise<{ group: THREE.Group; cook?: CrustUniforms }> {
   const [{ GLTFLoader }, { DRACOLoader }, { MeshoptDecoder }] = await Promise.all([
     import('three/addons/loaders/GLTFLoader.js'),
     import('three/addons/loaders/DRACOLoader.js'),
@@ -126,7 +193,7 @@ async function loadMesh(spec: AssetSpec): Promise<THREE.Group> {
   const loader = new GLTFLoader()
   loader.setDRACOLoader(new DRACOLoader().setDecoderPath('/draco/'))
   loader.setMeshoptDecoder(MeshoptDecoder)
-  const gltf = await loader.loadAsync(resolveUrl(spec.file))
+  const gltf = await loader.loadAsync(resolveUrl(file))
   const root = gltf.scene
 
   // Scans usually arrive as plain standard materials. Oil is a thin glossy film over
@@ -147,10 +214,24 @@ async function loadMesh(spec: AssetSpec): Promise<THREE.Group> {
     mesh.material = Array.isArray(mesh.material) ? mesh.material.map(oily) : oily(mesh.material)
   })
 
+  // One material is all a single food piece has; that is the one the ritual cooks.
+  let cook: CrustUniforms | undefined
+  if (cookable) {
+    const mats = new Set<THREE.Material>()
+    root.traverse(obj => {
+      const mesh = obj as THREE.Mesh
+      if (mesh.isMesh) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach(m => mats.add(m))
+    })
+    if (mats.size === 1) {
+      const only = [...mats][0] as THREE.MeshStandardMaterial
+      if (only.isMeshStandardMaterial) cook = makeCookable(only)
+    }
+  }
+
   root.rotation.copy(eulerOf(spec))
   root.updateMatrixWorld(true)
   const box = new THREE.Box3().setFromObject(root)
-  return fit(root, box, spec)
+  return { group: fit(root, box, spec), cook }
 }
 
 // ---------------------------------------------------------------------------
@@ -160,8 +241,16 @@ export async function loadReal(
   spec: AssetSpec,
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
+  quality: Quality,
 ): Promise<Model> {
-  const group = SPLAT.test(spec.file) ? await loadSplat(spec, renderer, scene) : await loadMesh(spec)
+  const file = quality.low && spec.fileLite ? spec.fileLite : spec.file
+  let group: THREE.Group
+  let cook: CrustUniforms | undefined
+  if (SPLAT.test(file)) {
+    group = await loadSplat({ ...spec, file }, renderer, scene)
+  } else {
+    ;({ group, cook } = await loadMesh(spec, file, slot === 'drumstick' && spec.cook !== false))
+  }
   return {
     name: slot.startsWith('drumstick') ? 'drumstick' : (slot as Model['name']),
     key: `real:${slot}`,
@@ -169,7 +258,8 @@ export async function loadReal(
     group,
     tilt: spec.tilt ?? 0,
     spin: spec.spin ?? 0.28,
-    timed: [],
+    cook,
+    timed: cook ? [cook] : [],
     dispose() {
       group.traverse(obj => {
         const anyObj = obj as any

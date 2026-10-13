@@ -45,11 +45,10 @@ current export options; what matters is that it gives you one of the file types 
   chicken filling about half the frame. Do not move the chicken while shooting.
 - 60–90 seconds of slow video, or 150–300 photos, is plenty.
 
-**For the ritual section** do it three times with three pieces: raw marinated, floured,
-and fried. With all three present the "الطقوس" section shows real chicken at every step
-instead of the drawing. With only the fried one, the hero, story and menu are real and
-the ritual keeps the drawn one (mixing a real piece with a drawn one looks worse than
-either).
+**For the ritual section** a single fried mesh is enough: the site cooks that same
+piece backwards and forwards (spice rub → flour → golden) by regrading its own texture.
+For a ritual that is captured at every step, shoot three pieces — raw marinated,
+floured and fried — and list all three; with all three present they are used instead.
 
 The burger, fries and can can be captured the same way and slot in the same way.
 
@@ -62,11 +61,20 @@ Captures include the table and the room. Open the file in **SuperSplat**
 2. Rotate it so the bone points up (or note the rotation for the manifest).
 3. Export compressed (`.sog` or compressed `.ply`). Aim for under ~10 MB.
 
-For a mesh, shrink it before it goes on the site:
+For a mesh — a scan, a marketplace download, an AI-generated model — run it through
+the site's own tool rather than using it as it comes:
 
 ```bash
-npx @gltf-transform/cli optimize drumstick-raw.glb drumstick.glb --texture-compress webp --texture-size 2048
+npm run model -- path/to/scene.gltf site/public/models --name drumstick
 ```
+
+It welds and simplifies the mesh (a desktop and a phone version), stands it upright,
+**bakes ambient occlusion from the geometry** so the cracks between crumbs go dark,
+regrades the colour towards fried golden-brown, derives the normal and roughness maps
+most models lack, adds a clearcoat for the oil (masked to the peaks), and compresses
+everything. That is the difference between "a 3D model of chicken" and something that
+reads as food. The drumstick the site ships was made this way from a CC BY model —
+see `site/public/models/CREDITS.txt`.
 
 ## Putting it on the site
 
@@ -97,7 +105,9 @@ web/site/public/models/
 | `scale` | Multiplies the automatic fit (it is already sized to the layout). |
 | `offset` | `[x, y, z]` nudge after fitting, in fitted units. |
 | `tilt` / `spin` | Resting tilt (radians) and turntable speed (radians/second). |
-| `oil` | Meshes only: 0–1 clearcoat for a glossier crust. |
+| `fileLite` | A lighter file for phones (the tool above writes `<name>-lite.glb`). |
+| `oil` | Meshes only: 0–1 clearcoat for a glossier crust (the tool already adds one). |
+| `cook` | Drumstick meshes only: `false` stops the ritual cooking it by shader. |
 
 Rebuild and deploy (`npm run build`, or rebuild the Docker image). Try it locally first
 with `npm run build && npm run demo` and open http://localhost:8080.
