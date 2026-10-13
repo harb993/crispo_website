@@ -10,6 +10,8 @@ import MenuManagementScreen from './screens/owner/MenuManagementScreen'
 import RawMaterialsScreen from './screens/owner/RawMaterialsScreen'
 import CustomersScreen from './screens/owner/CustomersScreen'
 import DeliveryCenterScreen from './screens/owner/DeliveryCenterScreen'
+import WebOrdersScreen from './screens/cashier/WebOrdersScreen'
+import { chime } from './lib/chime'
 // Charting pulls in recharts, so the accountant's report loads on demand like Analytics.
 const FinanceScreen = React.lazy(() => import('./screens/owner/FinanceScreen'))
 import logoUrl from './assets/logo.png'
@@ -166,6 +168,37 @@ function App() {
     return window.api.onShiftExported((data: any) => setShiftExport(data))
   }, [])
 
+  /*
+    Orders from the website. The bell rings when one arrives — and keeps ringing every
+    half minute while any is still waiting, wherever the cashier happens to be in the
+    app, because a web customer is staring at «بانتظار القبول» and has no other way of
+    reaching the till. The banner stays until somebody opens the orders.
+  */
+  const [webNew, setWebNew] = React.useState(0)
+  const [webBanner, setWebBanner] = React.useState<{ code: string; name: string; total: number }[] | null>(null)
+  useEffect(() => {
+    if (!user) { setWebNew(0); setWebBanner(null); return }
+    let live = true
+    const refresh = () => window.api.getWebStatus?.().then((res: any) => {
+      if (live && res?.success) setWebNew(res.data.newCount)
+    })
+    void refresh()
+    const poll = setInterval(refresh, 20_000)
+    const off = window.api.onWebOrdersChanged?.((d) => {
+      setWebNew(d.status?.newCount ?? 0)
+      if (d.newOrders?.length) {
+        chime()
+        setWebBanner(prev => [...(prev ?? []), ...d.newOrders].slice(-4))
+      }
+    })
+    return () => { live = false; clearInterval(poll); off?.() }
+  }, [user])
+  useEffect(() => {
+    if (webNew === 0) { setWebBanner(null); return }
+    const again = setInterval(chime, 30_000)
+    return () => clearInterval(again)
+  }, [webNew])
+
   // Wait for the licence answer rather than flashing the activation screen at a
   // machine that turns out to be fine.
   if (licence === null) return null
@@ -204,6 +237,8 @@ function App() {
     // so the board is theirs to keep current; counting the cash in is owner/accountant
     // only, and the screen's own button enforces that.
     { id: 'delivery', group: 'sell', label: 'الدليفري', icon: '🛵', roles: ['cashier', 'owner', 'accountant'] },
+    // The website's orders. The accountant can look; only the till's people accept.
+    { id: 'web', group: 'sell', label: 'طلبات الموقع', icon: '🌐', roles: ['cashier', 'owner', 'accountant'] },
 
     { id: 'shifts', group: 'money', label: 'الورديات', icon: '🕒', roles: ['owner', 'accountant'] },
     // The accountant's home: P&L, every pound spent, and the PDF/Excel exports.
@@ -254,6 +289,7 @@ function App() {
     finance: <FinanceScreen />,
     orders: <OrderHistoryScreen />,
     delivery: <DeliveryCenterScreen />,
+    web: <WebOrdersScreen />,
     customers: <CustomersScreen />,
     dashboard: <DashboardScreen />,
     menu: <MenuManagementScreen />,
@@ -330,7 +366,7 @@ function App() {
             if (items.length === 0) return null
             // The group in use is always open; any other opens when its heading is pressed.
             const open = !grouped || g.id === currentGroup || openGroup === g.id
-            const hasAlert = g.id === 'manage' && lowStockAlerts.length > 0
+            const hasAlert = (g.id === 'manage' && lowStockAlerts.length > 0) || (g.id === 'sell' && webNew > 0)
             return (
               <div key={g.id || 'all'}>
                 {grouped && (
@@ -347,7 +383,9 @@ function App() {
                     <span>
                       {g.label}
                       {hasAlert && !open && (
-                        <span className="badge badge-danger" style={{ marginRight: 8, fontSize: 10 }}>{lowStockAlerts.length}</span>
+                        <span className="badge badge-danger" style={{ marginRight: 8, fontSize: 10 }}>
+                          {g.id === 'sell' ? webNew : lowStockAlerts.length}
+                        </span>
                       )}
                     </span>
                     <span style={{ fontSize: 12, opacity: 0.8 }}>{open ? '▾' : '◂'}</span>
@@ -361,6 +399,12 @@ function App() {
                   >
                     <span className="nav-icon">{n.icon}</span>
                     <span>{n.label}</span>
+                    {n.id === 'web' && webNew > 0 && (
+                      // Solid, not the soft badge: it has to read on the highlighted row too.
+                      <span className="badge" style={{
+                        marginRight: 'auto', fontSize: 11, background: 'var(--danger)', color: '#fff', border: 0,
+                      }}>{webNew}</span>
+                    )}
                     {n.id === 'inventory' && lowStockAlerts.length > 0 && (
                       <span className="badge badge-danger" style={{ marginRight: 'auto', fontSize: 11 }}>
                         {lowStockAlerts.length}
@@ -407,6 +451,14 @@ function App() {
       {closingOpen && <ClosingModal onClose={() => setClosingOpen(false)} />}
       <WorkShiftGate />
       {shiftExport && <ShiftExportBanner data={shiftExport} onClose={() => setShiftExport(null)} />}
+      {webBanner && webNew > 0 && currentScreen !== 'web' && (
+        <WebOrderBanner
+          orders={webBanner}
+          waiting={webNew}
+          onOpen={() => { setActiveScreen('web'); setWebBanner(null) }}
+          onClose={() => setWebBanner(null)}
+        />
+      )}
     </div>
   )
 }
@@ -477,6 +529,35 @@ function ShiftExportBanner({ data, onClose }: { data: any; onClose: () => void }
       </div>
 
       {note && <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.7 }}>{note}</div>}
+    </div>
+  )
+}
+
+/** "A web order is waiting" — across the top, where it cannot be missed mid-sale. */
+function WebOrderBanner({ orders, waiting, onOpen, onClose }: {
+  orders: { code: string; name: string; total: number }[]
+  waiting: number
+  onOpen: () => void
+  onClose: () => void
+}) {
+  const last = orders[orders.length - 1]
+  return (
+    <div className="card" style={{
+      position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 950,
+      width: 'min(560px, calc(100vw - 32px))', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
+      border: '2px solid var(--accent)', boxShadow: '0 18px 50px rgba(0,0,0,0.28)', animation: 'slideUp 250ms ease',
+    }}>
+      <div style={{ fontSize: 30 }}>🌐</div>
+      <div style={{ flex: 1, lineHeight: 1.6 }}>
+        <b style={{ fontSize: 16 }}>{waiting > 1 ? `${waiting} طلبات من الموقع مستنية` : 'طلب جديد من الموقع'}</b>
+        {last && (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            <b dir="ltr">{last.code}</b> · {last.name} · {Number(last.total).toFixed(2)}
+          </div>
+        )}
+      </div>
+      <button className="btn btn-success" style={{ fontWeight: 800, padding: '10px 18px' }} onClick={onOpen}>افتح الطلبات</button>
+      <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="إخفاء">✕</button>
     </div>
   )
 }

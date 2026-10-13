@@ -1544,3 +1544,93 @@ export interface ReceiptData {
   date: string
   receiptFooter: string
 }
+
+// ===== Web orders — the website, via the relay (web/relay) =====
+
+/**
+ * Where a web order stands at THIS till. Deliberately few: once accepted, a delivery
+ * order's progress is the delivery board's to track, exactly like one rung up at the
+ * counter. The two takeaway states exist because a takeaway order has no board.
+ */
+export type WebOrderLocalStatus = 'new' | 'accepted' | 'rejected' | 'ready' | 'collected'
+
+/** What the customer's tracking page says. Mirrors STATUSES in web/relay/orders.mjs. */
+export type WebPublicStatus =
+  | 'pending' | 'received' | 'preparing' | 'ready' | 'on_the_way'
+  | 'delivered' | 'collected' | 'rejected' | 'cancelled' | 'expired'
+
+export interface WebOrderLine {
+  itemId: number
+  name: string
+  optionIds: number[]
+  label: string | null
+  qty: number
+  /** The website's quote. The till re-prices every line when the order is accepted. */
+  unitPrice: number
+  total: number
+}
+
+export interface WebOrder {
+  web_order_id: number
+  remote_id: string
+  /** "W-4821" — what the customer reads out on the phone. */
+  code: string
+  order_type: 'delivery' | 'takeaway'
+  customer_name: string
+  customer_phone: string
+  customer_address: string | null
+  delivery_area_id: number | null
+  area_name: string | null
+  payment_type: PaymentType
+  notes: string | null
+  lines: WebOrderLine[]
+  quoted_subtotal: number
+  quoted_fee: number
+  quoted_total: number
+  placed_at: string
+  received_at: string
+  status: WebOrderLocalStatus
+  /** The invoice it became, once accepted. */
+  order_id: number | null
+  invoice_number: string | null
+  order_status: OrderStatus | null
+  delivery_status: DeliveryStatus | null
+  total_amount: number | null
+  handled_by_name: string | null
+  handled_at: string | null
+  reject_reason: string | null
+  /** What the customer is being shown now, derived from all of the above. */
+  public_status: WebPublicStatus
+  /** The last status the relay confirmed. Differs from public_status until it syncs. */
+  synced_status: WebPublicStatus | null
+}
+
+/** The owner's settings for online ordering. The relay key itself never leaves main. */
+export interface WebOrderConfig {
+  enabled: boolean
+  relayUrl: string
+  keySet: boolean
+  /** The cashier's pause switch — off stops new web orders without unplugging anything. */
+  accepting: boolean
+  etaDelivery: number
+  etaTakeaway: number
+  takeaway: boolean
+}
+
+export interface WebSyncStatus {
+  enabled: boolean
+  configured: boolean
+  /** Why this machine is not syncing even though it is enabled. */
+  skipped: 'demo' | 'node' | 'unlicensed' | null
+  /** The relay answered within the last half minute. */
+  online: boolean
+  accepting: boolean
+  /** What the website is being told: taking orders, or not and why. */
+  open: boolean
+  reason: 'paused' | 'closed' | null
+  lastSyncAt: number | null
+  lastOkAt: number | null
+  lastError: string | null
+  /** Web orders waiting for a cashier. */
+  newCount: number
+}

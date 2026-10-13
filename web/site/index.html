@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Crispo — فراخ مقرمشة | اطلب أونلاين</title>
+  <meta name="description" content="فراخ متبّلة ١٢ ساعة ومقلية على ١٨٠°. اطلب أونلاين من كريسبو، وتابع طلبك لحظة بلحظة من المطبخ لحد بابك." />
+  <meta name="theme-color" content="#120b09" />
+  <meta property="og:title" content="Crispo — قرمشة ليها صوت" />
+  <meta property="og:description" content="اطلب أونلاين وتابع طلبك من المطبخ لحد بابك." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/logo.png" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300..900&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Instrument+Serif:ital@0;1&display=swap" />
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body class="is-loading">
+  <!-- ============ Preloader: the oil coming up to temperature ============ -->
+  <div class="loader" aria-hidden="true">
+    <div class="loader__inner">
+      <div class="loader__temp"><span class="loader__num">0</span><sup>°C</sup></div>
+      <div class="loader__label">بنسخّن الزيت<span class="loader__dots"></span></div>
+      <div class="loader__bar"><i></i></div>
+    </div>
+    <div class="loader__curtain"></div>
+  </div>
+
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="cursor" aria-hidden="true"><div class="cursor__ring"><span class="cursor__label"></span></div><div class="cursor__dot"></div></div>
+
+  <!-- ============ Nav ============ -->
+  <header class="nav">
+    <a class="nav__brand" href="#top" aria-label="Crispo">
+      <svg class="nav__mark" viewBox="0 0 512 512" aria-hidden="true"><use href="#mark" /></svg>
+      <span class="nav__word">CRISPO</span>
+    </a>
+    <nav class="nav__links" aria-label="الأقسام">
+      <a href="#menu" data-cursor="hover">المنيو</a>
+      <a href="#story" data-cursor="hover">الحكاية</a>
+      <a href="#zones" data-cursor="hover">التوصيل</a>
+    </nav>
+    <div class="nav__end">
+      <div class="status" data-status="loading" role="status">
+        <i class="status__dot"></i><span class="status__text">بنتأكد من المطبخ…</span>
+      </div>
+      <button class="nav__sound" type="button" aria-pressed="false" data-cursor="hover" title="صوت القرمشة">
+        <span class="nav__sound-bars"><i></i><i></i><i></i><i></i></span><span class="nav__sound-label">SOUND</span>
+      </button>
+      <button class="nav__cart" type="button" data-open-cart data-cursor="hover">
+        <span>السلة</span><b class="nav__count">0</b>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ============ Hero ============ -->
+    <section class="hero" data-theme="ink">
+      <div class="hero__word" aria-hidden="true"><span>CRISPO</span></div>
+      <div class="hero__anchor" data-gl-anchor data-gl-model="drumstick" data-gl-scale="1"></div>
+      <div class="hero__fallback" aria-hidden="true"><svg viewBox="0 0 512 512"><use href="#mark" /></svg></div>
+
+      <p class="eyebrow hero__eyebrow"><i class="eyebrow__dot"></i>فراخ مقرمشة · القاهرة</p>
+      <div class="hero__aside">
+        <span class="mono">HOT · CRISPY · GOLDEN</span>
+        <span class="serif">est. 2024 — Cairo</span>
+      </div>
+
+      <div class="hero__content">
+        <h1 class="hero__title" data-split>
+          <span class="line">قرمشة ليها <em>صوت.</em></span>
+        </h1>
+        <p class="hero__lede">فراخ متبّلة ١٢ ساعة، متغطّية بخلطتنا السرّية، ومقلية على ١٨٠° بالظبط. اطلب من هنا — وطلبك بيظهر على شاشة الكاشير في نفس اللحظة.</p>
+        <div class="hero__ctas">
+          <a class="btn btn--primary" href="#menu" data-magnetic data-cursor="hover"><span>اطلب دلوقتي</span><i class="btn__arrow">←</i></a>
+          <a class="btn btn--ghost" href="#story" data-magnetic data-cursor="hover"><span>الحكاية</span></a>
+        </div>
+      </div>
+
+      <div class="hero__meta">
+        <span class="hero__scroll"><i></i>اسحب</span>
+        <span class="hero__temp mono">OIL 180°C</span>
+      </div>
+    </section>
+
+    <!-- ============ Crossed bands ============ -->
+    <section class="bands" aria-hidden="true">
+      <div class="band band--red"><div class="band__track">
+        <span>CRUNCH</span><b>✺</b><span>قرمشة</span><b>✺</b><span>GOLDEN</span><b>✺</b><span>دهبي</span><b>✺</b><span>HOT</span><b>✺</b><span>سخن</span><b>✺</b><span>JUICY</span><b>✺</b><span>عصيري</span><b>✺</b>
+      </div></div>
+      <div class="band band--gold"><div class="band__track band__track--rev">
+        <span>اطلب أونلاين</span><b>●</b><span>ORDER ONLINE</span><b>●</b><span>تابع طلبك لحظة بلحظة</span><b>●</b><span>LIVE TRACKING</span><b>●</b>
+      </div></div>
+    </section>
+
+    <!-- ============ Manifesto ============ -->
+    <section class="manifesto" id="story" data-theme="cream">
+      <div class="section-label"><span>(01)</span> الحكاية <em class="serif">— the story</em></div>
+      <div class="manifesto__grid">
+        <p class="manifesto__text" data-words>
+          إحنا مش بنقلي فراخ وبس. إحنا بنطارد اللحظة اللي بتسمع فيها
+          <span class="chip chip--red">القرمشة</span>
+          قبل ما تدوق — ونعيدها في كل قطعة، كل يوم، من غير
+          <span class="chip chip--gold">اختصارات</span>.
+        </p>
+        <div class="manifesto__anchor" data-gl-anchor data-gl-model="drumstick" data-gl-scale="0.95"></div>
+      </div>
+      <ul class="stats">
+        <li><b data-count="12">0</b><span>ساعة تتبيلة في لبن رايب</span></li>
+        <li><b data-count="11">0</b><span>نوع بهارات في الخلطة</span></li>
+        <li><b data-count="180" data-suffix="°">0</b><span>زيت نضيف كل وردية</span></li>
+      </ul>
+    </section>
+
+    <!-- ============ Ritual (pinned) ============ -->
+    <section class="ritual" data-theme="ink">
+      <div class="ritual__pin">
+        <div class="section-label section-label--light"><span>(02)</span> الطقوس <em class="serif">— the ritual</em></div>
+        <div class="ritual__temp" aria-hidden="true"><span class="ritual__deg">0</span>°</div>
+        <div class="ritual__anchor" data-gl-anchor data-gl-model="drumstick" data-gl-scale="0.95"></div>
+        <ol class="ritual__steps">
+          <li class="ritual__step is-active">
+            <span class="ritual__n">01</span>
+            <h3>تتبيلة <em class="serif">marinate</em></h3>
+            <p>١٢ ساعة في لبن رايب وتوابل. هنا الطراوة بتتولد.</p>
+          </li>
+          <li class="ritual__step">
+            <span class="ritual__n">02</span>
+            <h3>تكسية <em class="serif">dredge</em></h3>
+            <p>نغمّسها مرتين في خلطة الدقيق والبهارات. كل نتوء بتشوفه = قرمشة بتسمعها.</p>
+          </li>
+          <li class="ritual__step">
+            <span class="ritual__n">03</span>
+            <h3>قلي <em class="serif">fry</em></h3>
+            <p>١٨٠ درجة بالظبط. دهبي من برّه، عصيري من جوّه.</p>
+          </li>
+        </ol>
+        <div class="ritual__progress" aria-hidden="true"><i></i></div>
+      </div>
+    </section>
+
+    <!-- ============ Menu ============ -->
+    <section class="menu" id="menu" data-theme="ink">
+      <div class="menu__head">
+        <div class="section-label section-label--light"><span>(03)</span> المنيو <em class="serif">— the menu</em></div>
+        <h2 class="menu__title">اختار <span class="accent">وجبتك.</span></h2>
+        <p class="menu__count"></p>
+      </div>
+      <div class="preview-note" hidden>معاينة — المنيو ده للعرض. الطلب أونلاين هيشتغل أول ما المطعم يتوصل.</div>
+      <div class="menu__tabs" role="tablist" aria-label="الأقسام"></div>
+      <div class="menu__body">
+        <div class="menu__stage">
+          <div class="menu__anchor" data-gl-anchor data-gl-model="drumstick" data-gl-scale="0.92"></div>
+        </div>
+        <div class="menu__col">
+          <div class="menu__cat"><h3 class="menu__cat-name"></h3><span class="mono menu__cat-n"></span></div>
+          <ul class="menu__list" aria-live="polite"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Delivery zones ============ -->
+    <section class="zones" id="zones" data-theme="red">
+      <div class="section-label section-label--light"><span>(04)</span> التوصيل <em class="serif">— delivery</em></div>
+      <div class="zones__grid">
+        <h2 class="zones__title">بنوصّل سخن<br />لحد بابك.</h2>
+        <div class="zones__badge" aria-hidden="true">
+          <svg viewBox="0 0 200 200" direction="ltr">
+            <defs><path id="circle" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" /></defs>
+            <text><textPath href="#circle">HOT &amp; CRISPY • 180°C • HOT &amp; CRISPY • 180°C • </textPath></text>
+          </svg>
+          <b class="zones__eta">40<small>د</small></b>
+        </div>
+      </div>
+      <p class="zones__lede">اختار منطقتك وقت الطلب — رسوم التوصيل بتتحسب لوحدها، والطيار بيخرج أول ما الأكل يطلع من الزيت.</p>
+      <ul class="zones__list"></ul>
+    </section>
+  </main>
+
+  <!-- ============ Footer ============ -->
+  <footer class="footer" data-theme="ink">
+    <div class="footer__cta">
+      <p class="footer__q">جعان؟</p>
+      <a class="btn btn--primary btn--xl" href="#menu" data-magnetic data-cursor="hover"><span>اطلب دلوقتي</span><i class="btn__arrow">←</i></a>
+    </div>
+    <div class="footer__grid">
+      <div><h4>تليفون</h4><a class="footer__phone" href="#" dir="ltr"></a></div>
+      <div><h4>العنوان</h4><p class="footer__address">القاهرة</p></div>
+      <div><h4>الطلب أونلاين</h4><p>طلبك بيروح مباشرة لشاشة الكاشير في الفرع، وبتتابع حالته هنا لحد ما يوصل.</p></div>
+    </div>
+    <div class="footer__word" aria-hidden="true">CRISPO</div>
+    <div class="footer__bottom">
+      <span>© <span class="footer__year"></span> Crispo</span>
+      <span class="serif">made hot in Cairo</span>
+    </div>
+  </footer>
+
+  <!-- ============ Options sheet ============ -->
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
+    <div class="sheet__scrim" data-close-sheet></div>
+    <div class="sheet__panel">
+      <button class="icon-btn sheet__close" type="button" data-close-sheet aria-label="إغلاق">✕</button>
+      <p class="sheet__cat"></p>
+      <h3 class="sheet__title" id="sheet-title"></h3>
+      <p class="sheet__desc"></p>
+      <div class="sheet__groups"></div>
+      <div class="sheet__foot">
+        <div class="qty"><button type="button" data-qty="-1" aria-label="أقل">−</button><output class="qty__n">1</output><button type="button" data-qty="1" aria-label="أكتر">+</button></div>
+        <button class="btn btn--primary sheet__add" type="button"><span>أضف للسلة</span><b class="sheet__price"></b></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Cart / checkout drawer ============ -->
+  <aside class="drawer" id="drawer" aria-hidden="true" aria-labelledby="drawer-title">
+    <div class="drawer__scrim" data-close-cart></div>
+    <div class="drawer__panel">
+      <header class="drawer__head">
+        <button class="icon-btn drawer__back" type="button" hidden aria-label="رجوع">→</button>
+        <h3 id="drawer-title">سلتك</h3>
+        <button class="icon-btn" type="button" data-close-cart aria-label="إغلاق">✕</button>
+      </header>
+
+      <div class="drawer__view drawer__view--cart">
+        <ul class="cart"></ul>
+        <div class="cart__empty">
+          <p>السلة فاضية.</p>
+          <span>المنيو مستنيك.</span>
+        </div>
+      </div>
+
+      <form class="drawer__view drawer__view--checkout checkout" novalidate hidden>
+        <div class="seg" role="radiogroup" aria-label="نوع الطلب">
+          <label><input type="radio" name="type" value="delivery" checked /><span>توصيل</span></label>
+          <label><input type="radio" name="type" value="takeaway" /><span>استلام من الفرع</span></label>
+        </div>
+        <label class="field"><span>الاسم</span><input name="name" autocomplete="name" maxlength="60" required /></label>
+        <label class="field"><span>رقم الموبايل</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" maxlength="20" placeholder="01xxxxxxxxx" required /></label>
+        <div class="checkout__delivery">
+          <label class="field"><span>المنطقة</span><select name="areaId" required></select></label>
+          <label class="field"><span>العنوان بالتفصيل</span><textarea name="address" rows="2" maxlength="300" placeholder="الشارع، رقم العمارة، الدور، علامة مميزة"></textarea></label>
+        </div>
+        <label class="field"><span>ملاحظات للمطبخ <small>(اختياري)</small></span><input name="notes" maxlength="300" placeholder="مثلاً: من غير بصل، صوص زيادة" /></label>
+        <div class="seg seg--small" role="radiogroup" aria-label="الدفع">
+          <label><input type="radio" name="payment" value="cash" checked /><span>كاش عند الاستلام</span></label>
+          <label><input type="radio" name="payment" value="card" /><span>فيزا عند الاستلام</span></label>
+        </div>
+        <p class="checkout__error" role="alert" hidden></p>
+      </form>
+
+      <footer class="drawer__foot">
+        <dl class="totals">
+          <div><dt>الأصناف</dt><dd class="totals__sub">0</dd></div>
+          <div class="totals__fee-row" hidden><dt>التوصيل</dt><dd class="totals__fee">0</dd></div>
+          <div class="totals__grand"><dt>الإجمالي</dt><dd class="totals__total">0</dd></div>
+        </dl>
+        <p class="drawer__note" hidden>السعر النهائي بيأكده الكاشير لحظة قبول الطلب.</p>
+        <button class="btn btn--primary btn--block drawer__go" type="button"><span>كمّل الطلب</span><i class="btn__arrow">←</i></button>
+      </footer>
+    </div>
+  </aside>
+
+  <!-- ============ Tracking ============ -->
+  <div class="track" id="track" role="dialog" aria-modal="true" aria-labelledby="track-title" hidden>
+    <div class="track__panel">
+      <header class="track__head">
+        <p class="track__code-label">طلب رقم</p>
+        <p class="track__code mono" dir="ltr"></p>
+        <button class="icon-btn track__close" type="button" aria-label="إغلاق">✕</button>
+      </header>
+      <h2 class="track__title" id="track-title"></h2>
+      <p class="track__sub"></p>
+      <ol class="track__steps"></ol>
+      <div class="track__card">
+        <ul class="track__lines"></ul>
+        <dl class="totals totals--light">
+          <div class="track__fee-row"><dt>التوصيل</dt><dd class="track__fee"></dd></div>
+          <div class="totals__grand"><dt>الإجمالي</dt><dd class="track__total"></dd></div>
+        </dl>
+        <p class="track__invoice"></p>
+      </div>
+      <div class="track__actions">
+        <a class="btn btn--ghost track__call" href="#" data-cursor="hover"><span>اتصل بالمطعم</span></a>
+        <button class="btn btn--primary track__again" type="button" data-cursor="hover"><span>طلب جديد</span></button>
+      </div>
+    </div>
+  </div>
+
+  <button class="track-pill" type="button" hidden><i class="status__dot"></i><span>تابع طلبك</span><b class="mono"></b></button>
+  <div class="toast" role="status" aria-live="polite"></div>
+
+  <!-- The rooster mark, drawn once and reused -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="mark" viewBox="0 0 512 512">
+      <path fill="#c8202f" d="M148 172 176 60l38 70 45-78 33 78 45-38 1 63 24 33-62 17-100-5z"/>
+      <path fill="#c8202f" d="M325 402A140 140 0 1 1 325 188L286.4 233.7A80 80 0 1 0 286.4 356.3Z"/>
+      <circle cx="240" cy="248" r="33" fill="#141010"/>
+      <circle cx="248" cy="236" r="8" fill="#fff"/>
+      <path fill="#f5a21a" d="m268 232 122 26-120 28z"/>
+      <path fill="#f5a21a" d="m262 296 94 4-70 46z"/>
+    </symbol>
+  </svg>
+</body>
+</html>

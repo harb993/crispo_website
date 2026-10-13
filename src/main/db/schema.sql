@@ -442,6 +442,43 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
 CREATE INDEX IF NOT EXISTS idx_supplier_payments_supplier ON supplier_payments(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_supplier_payments_date ON supplier_payments(paid_on);
 
+-- Orders placed on the website, as collected from the relay (web/relay).
+--
+-- An inbox, not the books: a row here is what the customer ASKED for. Nothing is sold
+-- until a cashier accepts it, at which point it is rung up through the ordinary
+-- createOrder — priced from this database, numbered, printed — and order_id points at
+-- the invoice it became. Kept apart from `orders` so that rejected and unanswered web
+-- orders never touch a report, and so the orders-table rebuilds in db.ts (which copy a
+-- fixed column list) never have to know about it. order_id carries no foreign key for
+-- the same reason: a shop-data import replaces `orders` wholesale.
+CREATE TABLE IF NOT EXISTS web_orders (
+    web_order_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id        TEXT NOT NULL UNIQUE,
+    code             TEXT NOT NULL,
+    order_type       TEXT NOT NULL CHECK (order_type IN ('delivery','takeaway')),
+    customer_name    TEXT NOT NULL,
+    customer_phone   TEXT NOT NULL,
+    customer_address TEXT,
+    delivery_area_id INTEGER,
+    payment_type     TEXT NOT NULL DEFAULT 'cash' CHECK (payment_type IN ('cash','card')),
+    notes            TEXT,
+    lines_json       TEXT NOT NULL,
+    quoted_subtotal  REAL NOT NULL DEFAULT 0,
+    quoted_fee       REAL NOT NULL DEFAULT 0,
+    quoted_total     REAL NOT NULL DEFAULT 0,
+    placed_at        TEXT NOT NULL,
+    received_at      TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    status           TEXT NOT NULL DEFAULT 'new'
+                     CHECK (status IN ('new','accepted','rejected','ready','collected')),
+    order_id         INTEGER,
+    handled_by       INTEGER,
+    handled_at       TEXT,
+    reject_reason    TEXT,
+    synced_status    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_web_orders_status ON web_orders(status);
+CREATE INDEX IF NOT EXISTS idx_web_orders_order ON web_orders(order_id);
+
 -- Customer feedback notes (from WhatsApp campaigns)
 CREATE TABLE IF NOT EXISTS customer_notes (
     note_id    INTEGER PRIMARY KEY AUTOINCREMENT,

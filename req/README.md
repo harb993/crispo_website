@@ -40,5 +40,6 @@ The good parts I kept: the two-role split, the general shape of the schema, the 
 | [`06-reliability-engineering.md`](./06-reliability-engineering.md) | Transactions, crash recovery, the Electron-specific gotchas that will actually bite you, backups, testing |
 | [`07-packaging-and-deployment.md`](./07-packaging-and-deployment.md) | Building the Windows installer, the native-module packaging trap, code signing reality |
 | [`08-roadmap.md`](./08-roadmap.md) | Suggested build order, phase by phase |
+| [`10-online-ordering.md`](./10-online-ordering.md) | The website, the relay it posts to, and how the till collects and tracks web orders |
 
 Start with `01`, skim `02`, and don't skip `06` — that's the one doing the most work toward your actual stated goal.

@@ -1,0 +1,29 @@
+{
+  "name": "crispo-web",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Crispo's ordering website and the relay that connects it to the till",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "npm run build && node relay/server.mjs --demo",
+    "start": "node relay/server.mjs",
+    "demo": "node relay/server.mjs --demo",
+    "test": "node --test relay/test/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "gsap": "3.15.0",
+    "lenis": "1.3.23",
+    "three": "0.183.2"
+  },
+  "devDependencies": {
+    "@types/three": "0.183.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.6"
+  }
+}

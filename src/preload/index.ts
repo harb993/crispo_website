@@ -343,6 +343,26 @@ const api = {
     ipcRenderer.on('app:ordersChanged', handler)
     return () => { ipcRenderer.removeListener('app:ordersChanged', handler) }
   },
+  // Online orders (طلبات الموقع) — the website's orders, collected from the relay.
+  listWebOrders: (scope?: 'active' | 'recent') => ipcRenderer.invoke('web:list', { scope }),
+  getWebStatus: () => ipcRenderer.invoke('web:status'),
+  acceptWebOrder: (webOrderId: number) => ipcRenderer.invoke('web:accept', { webOrderId }),
+  rejectWebOrder: (webOrderId: number, reason: string) => ipcRenderer.invoke('web:reject', { webOrderId, reason }),
+  setWebOrderStage: (webOrderId: number, stage: 'ready' | 'collected') =>
+    ipcRenderer.invoke('web:stage', { webOrderId, stage }),
+  setWebAccepting: (accepting: boolean) => ipcRenderer.invoke('web:setAccepting', { accepting }),
+  getWebConfig: () => ipcRenderer.invoke('web:config:get'),
+  setWebConfig: (data: any) => ipcRenderer.invoke('web:config:set', data),
+  testWebConnection: () => ipcRenderer.invoke('web:test'),
+  /** A web order arrived, or the link to the website changed. */
+  onWebOrdersChanged: (cb: (data: {
+    status: any
+    newOrders: { code: string; name: string; total: number; type: 'delivery' | 'takeaway' }[]
+  }) => void) => {
+    const handler = (_e: any, data: any) => cb(data)
+    ipcRenderer.on('app:webOrdersChanged', handler)
+    return () => { ipcRenderer.removeListener('app:webOrdersChanged', handler) }
+  },
   // Node tills only: the state of the link the master holds to this machine â€”
   // connected or not, why not, whether the master has locked this till, and how
   // fresh the local read-only copy of the books is.

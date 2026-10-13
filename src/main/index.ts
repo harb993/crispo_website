@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, net } from 'electron'
 import path from 'node:path'
 import log from 'electron-log/main'
 import {
@@ -27,6 +27,8 @@ import { registerNetworkIpc } from './ipc/network.ipc'
 import { registerSupplierIpc } from './ipc/supplier.ipc'
 import { registerShopDataIpc } from './ipc/shopData.ipc'
 import { registerLicenseIpc } from './ipc/license.ipc'
+import { registerWebOrderIpc } from './ipc/webOrders.ipc'
+import { startWebSync, stopWebSync } from './services/webOrderService'
 import { getLicenseStatus } from './services/licenseService'
 import { applyNetworkMode } from './net/mode'
 import { stopServer } from './net/tillServer'
@@ -181,6 +183,7 @@ app.whenReady().then(async () => {
   registerNetworkIpc()
   registerSupplierIpc()
   registerShopDataIpc()
+  registerWebOrderIpc()
 
   // A ticket that failed mid-print leaves its temp file behind. Clear them at
   // startup rather than letting a year of them accumulate in the temp folder.
@@ -260,6 +263,17 @@ app.whenReady().then(async () => {
     // the moment it begins listening.
     await applyNetworkMode()
   }
+
+  // Online orders from the website. It dials OUT to the relay — the shop opens no
+  // port — and decides on every round whether this machine should be collecting at
+  // all: switched on by the owner, licensed, not a node, not the showcase books. So it
+  // starts unconditionally and picks itself up the moment any of those changes.
+  // Chromium's network stack rather than Node's, so the shop PC's own proxy and
+  // certificate settings apply.
+  startWebSync({
+    appVersion: app.getVersion(),
+    fetchImpl: (url, init) => net.fetch(url, init),
+  })
 
   // 3. Create window
   createWindow()
@@ -355,6 +369,7 @@ app.on('before-quit', (event) => {
     try {
       stopBackupSchedule()
       stopShiftExportSchedule()
+      stopWebSync()
       stopNodeMode()
       stopMasterMode()
       await stopServer()

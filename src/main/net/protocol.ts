@@ -280,6 +280,8 @@ export type PushEvent =
    */
   | { type: 'app:shiftExported'; data: unknown }
   | { type: 'app:workShiftChanged'; data: unknown }
+  /** A web order arrived, or the link to the website's relay changed state. */
+  | { type: 'app:webOrdersChanged'; data: unknown }
 
 /**
  * A ticket the master has already rendered, handed to a till to put on paper.

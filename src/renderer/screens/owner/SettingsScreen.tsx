@@ -5,6 +5,7 @@ import NumberInput from '../../components/NumberInput'
 import PrinterSettings from './PrinterSettings'
 import NetworkSettings from './NetworkSettings'
 import ShopDataPanel from './ShopDataPanel'
+import WebOrderingSettings from './WebOrderingSettings'
 import { THEMES, currentTheme, setTheme, type ThemeId } from '../../lib/theme'
 
 /**
@@ -68,12 +69,13 @@ export default function SettingsScreen() {
   )
 }
 
-type SettingsTab = 'shop' | 'shifts' | 'delivery' | 'printing' | 'network' | 'data' | 'security'
+type SettingsTab = 'shop' | 'shifts' | 'delivery' | 'web' | 'printing' | 'network' | 'data' | 'security'
 
 const SETTINGS_TABS: { id: SettingsTab; label: string }[] = [
   { id: 'shop', label: '🏢 المطعم والضريبة' },
   { id: 'shifts', label: '🕒 الورديات' },
   { id: 'delivery', label: '🛵 التوصيل' },
+  { id: 'web', label: '🌐 الطلب أونلاين' },
   { id: 'printing', label: '🖨️ الطابعات' },
   { id: 'network', label: '🖧 الأجهزة والشبكة' },
   { id: 'data', label: '📦 تصدير البيانات' },
@@ -796,6 +798,11 @@ function SettingsBody() {
           page's حفظ button, because switching mode restarts the network layer. */}
       <div style={only('network')}>
         <NetworkSettings showToast={showToast} />
+      </div>
+
+      {/* The website. Saves and applies itself, like the network settings. */}
+      <div style={only('web')}>
+        <WebOrderingSettings showToast={showToast} />
       </div>
 
       <div style={only('data')}>
