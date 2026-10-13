@@ -17,6 +17,13 @@ The till side — collecting, the **🌐 طلبات الموقع** screen, the s
 (`src/main/services/webOrderService.ts`, `src/renderer/screens/cashier/WebOrdersScreen.tsx`).
 The design is written up in [`../req/10-online-ordering.md`](../req/10-online-ordering.md).
 
+## Making the chicken look real
+
+The drumstick, burger, fries and can are drawn by code until you give the site a
+**capture of the real food** — a Gaussian splat or a photogrammetry mesh shot with a
+phone. Drop it in `site/public/models/` with a `manifest.json` and it replaces the
+drawing everywhere. How to shoot, clean up and install one: [`SCANNING.md`](SCANNING.md).
+
 ## Run it locally (no restaurant needed)
 
 ```bash
@@ -65,6 +72,7 @@ Environment variables — see [`.env.example`](.env.example):
 | `RELAY_DATA_DIR` | Where `relay.json` lives. Mount a volume — it holds orders the till has not collected yet. |
 | `TRUST_PROXY` | `1` behind a reverse proxy, so rate limits see the customer's IP. |
 | `ALLOWED_ORIGINS` | Only if the site is hosted elsewhere (build it with `VITE_API_BASE=https://relay…`). |
+| `ASSET_ORIGINS` | Only if the food captures are hosted elsewhere (a CDN). |
 
 ## Connect the till
 

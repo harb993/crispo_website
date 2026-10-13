@@ -257,6 +257,26 @@ describe('a lost acknowledgement', () => {
   })
 })
 
+describe('serving the site', () => {
+  test('a missing asset is a 404, the tracking link is the page', async () => {
+    fs.mkdirSync(path.join(dir, 'site', 'models'), { recursive: true })
+    fs.writeFileSync(path.join(dir, 'site', 'index.html'), '<!doctype html><title>ok</title>')
+    // The page probes for a capture manifest and must be told plainly there is none.
+    assert.equal((await fetch(`${base}/models/manifest.json`)).status, 404)
+    const page = await fetch(`${base}/track/abcdefghijklmnop`)
+    assert.equal(page.status, 200)
+    assert.match(await page.text(), /<title>ok/)
+    assert.match(page.headers.get('content-security-policy') ?? '', /wasm-unsafe-eval/)
+  })
+
+  test('captures are served with types the loaders accept', async () => {
+    fs.writeFileSync(path.join(dir, 'site', 'models', 'a.glb'), Buffer.from('glTF'))
+    fs.writeFileSync(path.join(dir, 'site', 'models', 'b.wasm'), Buffer.from([0, 97, 115, 109]))
+    assert.equal((await fetch(`${base}/models/a.glb`)).headers.get('content-type'), 'model/gltf-binary')
+    assert.equal((await fetch(`${base}/models/b.wasm`)).headers.get('content-type'), 'application/wasm')
+  })
+})
+
 describe('the till side', () => {
   test('refuses a missing or wrong key', async () => {
     const none = await call('POST', '/api/till/sync', { open: true })

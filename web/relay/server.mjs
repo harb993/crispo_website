@@ -63,6 +63,17 @@ const MIME = {
   '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
   '.webmanifest': 'application/manifest+json',
+  '.wasm': 'application/wasm',
+  // Captured food (site/public/models) and the studio lighting.
+  '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json',
+  '.spz': 'application/octet-stream',
+  '.ply': 'application/octet-stream',
+  '.splat': 'application/octet-stream',
+  '.ksplat': 'application/octet-stream',
+  '.sog': 'application/octet-stream',
+  '.exr': 'image/x-exr',
+  '.ktx2': 'image/ktx2',
 }
 
 const SECURITY_HEADERS = {
@@ -72,13 +83,22 @@ const SECURITY_HEADERS = {
   'permissions-policy': 'camera=(), microphone=(), geolocation=()',
 }
 
+/**
+ * Somewhere else the captures may be hosted (a CDN, a bucket), comma separated. The
+ * page fetches them, so they have to be allowed to connect.
+ */
+const ASSET_ORIGINS = (process.env.ASSET_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean).join(' ')
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  // The splat renderer and the mesh decoders are WebAssembly, and the splat sorter
+  // runs in a worker built from a blob.
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob:",
-  "connect-src 'self'",
+  `connect-src 'self' data: blob: ${ASSET_ORIGINS}`.trim(),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -379,8 +399,12 @@ export function createRelay(options = {}) {
 
     if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       const asIndex = path.join(file, 'index.html')
-      // Anything that is not a real file is the page itself — the tracking link
-      // `/track/<id>` included.
+      // A missing FILE is a 404 — the page probes for /models/manifest.json and must
+      // be told it is not there, not handed the HTML. Anything else that is not a real
+      // file is the page itself: the tracking link `/track/<id>` included.
+      if (path.extname(rel) && !fs.existsSync(asIndex)) {
+        return send(res, 404, { ok: false, error: 'not found' })
+      }
       file = fs.existsSync(asIndex) ? asIndex : path.join(root, 'index.html')
     }
     if (!fs.existsSync(file)) {

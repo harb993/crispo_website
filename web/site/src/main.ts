@@ -105,13 +105,21 @@ async function boot(): Promise<void> {
   gsap.ticker.add(() => state.stage?.render())
 
   let done = 0
-  const step = () => load.progress(++done / 6)
+  const step = () => load.progress(++done / 7)
+  // A captured hero is worth a moment's wait — opening on the drawn drumstick and then
+  // swapping it for the real one is the one transition nobody should see. Capped, so a
+  // slow connection still gets a page; the capture swaps itself in when it lands.
+  const heroCapture = new Promise<void>(resolve => {
+    if (!state.stage) return resolve()
+    void state.stage.loadCaptures(resolve)
+  })
   await Promise.all([
     loadShop().then(step),
     Promise.race([document.fonts?.ready, sleep(2500)]).then(step),
     state.stage
-      ? state.stage.warmUp(p => load.progress((done + p * 4) / 6)).then(() => { done += 4; load.progress(done / 6) })
+      ? state.stage.warmUp(p => load.progress((done + p * 4) / 7)).then(() => { done += 4; load.progress(done / 7) })
       : Promise.resolve().then(() => { done += 4 }),
+    Promise.race([heroCapture, sleep(9000)]).then(step),
     sleep(reduced ? 0 : 1200),
   ])
 

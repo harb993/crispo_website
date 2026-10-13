@@ -15,7 +15,8 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     target: 'es2022',
-    chunkSizeWarningLimit: 900,
+    // The splat renderer is one large lazy chunk, loaded only when a capture exists.
+    chunkSizeWarningLimit: 3200,
   },
   server: {
     port: 5173,

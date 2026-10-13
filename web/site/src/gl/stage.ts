@@ -2,6 +2,14 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { BUILDERS, type Model, type ModelName, type Quality } from './models'
 import { crustMaterial, type CrustUniforms } from './materials'
+import { fetchManifest, loadReal, type Manifest, type Slot } from './real'
+
+/**
+ * What an anchor can ask for: one of the cast, or 'ritual' — the drumstick in the
+ * ritual section, which is the procedural one being cooked unless all three real
+ * stages have been captured.
+ */
+export type StageSlot = ModelName | 'ritual'
 
 /**
  * One canvas, fixed behind the page, with one object on it at a time.
@@ -26,7 +34,7 @@ export interface Cook {
 
 interface Anchor {
   el: HTMLElement
-  model: ModelName | null
+  model: StageSlot | null
   scale: number
   spinBoost: number
 }
@@ -47,8 +55,11 @@ export class Stage {
 
   private quality: Quality
   private cache = new Map<ModelName, Model>()
+  /** Captures that have finished loading, by slot. They win over the procedural cast. */
+  private real = new Map<Slot, Model>()
+  private manifest: Manifest | null = null
   private current: Model | null = null
-  private pendingModel: ModelName = 'drumstick'
+  private pendingSlot: StageSlot = 'drumstick'
   /** 0..1 — shrinks to swap one object for the next. */
   private swap = 1
   private swapping = false
@@ -92,10 +103,23 @@ export class Stage {
     r.toneMappingExposure = 0.98
     r.setClearColor(0x000000, 0)
 
+    // A synthetic room straight away, then a real photographed studio once it has
+    // downloaded — reflections from a real place are much of what reads as "real".
     const pmrem = new THREE.PMREMGenerator(r)
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     this.scene.environmentIntensity = 0.55
-    pmrem.dispose()
+    void import('three/addons/loaders/EXRLoader.js')
+      .then(({ EXRLoader }) => new EXRLoader().loadAsync('/env/studio.exr'))
+      .then(tex => {
+        tex.mapping = THREE.EquirectangularReflectionMapping
+        const env = pmrem.fromEquirectangular(tex).texture
+        tex.dispose()
+        this.scene.environment = env
+        this.scene.environmentIntensity = 0.85
+        this.scene.environmentRotation.set(0, Math.PI * 0.35, 0)
+      })
+      .catch(() => { /* the room stays — still lit, just less convincingly */ })
+      .finally(() => pmrem.dispose())
 
     // Warm key from the top right, Crispo-red rim from behind, a gold fill from below:
     // the heat lamp, the brand, and the bounce off a fryer basket.
@@ -115,7 +139,7 @@ export class Stage {
     this.tiltGroup.add(this.spinGroup)
 
     this.buildCrumbs()
-    this.setModelNow('drumstick')
+    this.setModelNow(this.resolve('drumstick'))
 
     window.addEventListener('pointermove', e => {
       this.pointer.tx = (e.clientX / window.innerWidth) * 2 - 1
@@ -154,26 +178,78 @@ export class Stage {
     return m
   }
 
-  private setModelNow(name: ModelName): void {
+  /** The three real ritual stages, when every one of them has been captured. */
+  private realRitual(): boolean {
+    return this.real.has('drumstick-raw') && this.real.has('drumstick-dredged') && this.real.has('drumstick')
+  }
+
+  /**
+   * Which object a slot shows right now. A capture beats the procedural model; the
+   * ritual uses captures only as a complete set, because a real fried piece next to a
+   * drawn raw one would make the drawn one look worse than it is.
+   */
+  private resolve(slot: StageSlot): Model {
+    if (slot === 'ritual') {
+      if (!this.realRitual()) return this.getModel('drumstick')
+      const c = this.cook
+      const stage: Slot = c.fry > 0.5 ? 'drumstick' : c.coat > 0.5 ? 'drumstick-dredged' : 'drumstick-raw'
+      return this.real.get(stage)!
+    }
+    return this.real.get(slot) ?? this.getModel(slot)
+  }
+
+  private setModelNow(model: Model): void {
     if (this.current) this.spinGroup.remove(this.current.group)
-    this.current = this.getModel(name)
-    this.spinGroup.add(this.current.group)
-    this.pendingModel = name
+    this.current = model
+    this.spinGroup.add(model.group)
     this.applyCook()
   }
 
   /** Swap the object on stage: shrink and spin out, grow the next one in. */
-  setModel(name: ModelName): void {
-    this.pendingModel = name
-    if (!this.ok || this.current?.name === name || this.swapping) return
+  setModel(slot: StageSlot): void {
+    this.pendingSlot = slot
+    if (!this.ok || this.swapping || this.current?.key === this.resolve(slot).key) return
     this.swapping = true
     this.burst = 1
+  }
+
+  /**
+   * Load whatever has been captured (see real.ts). Resolves with how many loaded; the
+   * page carries on with the procedural cast in the meantime and swaps each capture
+   * in as it arrives. `first` is reported as soon as the hero's own capture is ready.
+   */
+  async loadCaptures(onHeroReady?: () => void): Promise<number> {
+    if (!this.ok) return 0
+    this.manifest = await fetchManifest()
+    if (!this.manifest) { onHeroReady?.(); return 0 }
+    const entries = Object.entries(this.manifest) as [Slot, NonNullable<Manifest[Slot]>][]
+    // The hero first: it is what is on screen when the page opens.
+    entries.sort(([a], [b]) => (a === 'drumstick' ? -1 : b === 'drumstick' ? 1 : 0))
+    let loaded = 0
+    for (const [slot, spec] of entries) {
+      try {
+        this.real.set(slot, await loadReal(slot, spec, this.renderer, this.scene))
+        loaded++
+      } catch (err) {
+        console.warn(`[stage] capture for ${slot} did not load (${spec.file}):`, err)
+      }
+      if (slot === 'drumstick') onHeroReady?.()
+    }
+    if (!this.manifest.drumstick) onHeroReady?.()
+    return loaded
+  }
+
+  /** True when the hero drumstick on screen is a capture. */
+  get showingReal(): boolean {
+    return !!this.current?.real
   }
 
   /** Drive the drumstick from raw to golden. Other objects arrive cooked. */
   setCook(c: Partial<Cook>): void {
     Object.assign(this.cook, c)
     this.applyCook()
+    // With real ritual captures, cooking means changing which capture is shown.
+    if (this.pendingSlot === 'ritual' && this.realRitual()) this.setModel('ritual')
   }
 
   private applyCook(): void {
@@ -193,14 +269,14 @@ export class Stage {
   registerAnchors(root: ParentNode = document): void {
     this.anchors = [...root.querySelectorAll<HTMLElement>('[data-gl-anchor]')].map(el => ({
       el,
-      model: (el.dataset.glModel as ModelName) || null,
+      model: (el.dataset.glModel as StageSlot) || null,
       scale: Number(el.dataset.glScale) || 1,
       spinBoost: Number(el.dataset.glSpin) || 0,
     }))
   }
 
   /** Point an anchor at a different object — the menu does this on a category change. */
-  setAnchorModel(el: HTMLElement, model: ModelName): void {
+  setAnchorModel(el: HTMLElement, model: StageSlot): void {
     el.dataset.glModel = model
     const a = this.anchors.find(x => x.el === el)
     if (a) a.model = model
@@ -273,7 +349,9 @@ export class Stage {
     this.target.y = -(cy - this.height / 2) * unit
     this.target.s = (Math.min(bestRect.width, bestRect.height) / 2) * unit * best.scale
     this.spinBoost = Math.max(this.spinBoost, best.spinBoost)
-    if (best.model && best.model !== this.pendingModel) this.setModel(best.model)
+    // Compared by what would be SHOWN, so a capture that finishes loading while its
+    // section is on screen swaps itself in.
+    if (best.model) this.setModel(best.model)
   }
 
   render(): void {
@@ -298,7 +376,7 @@ export class Stage {
     if (this.swapping) {
       this.swap = Math.max(0, this.swap - dt * 4)
       if (this.swap === 0) {
-        this.setModelNow(this.pendingModel)
+        this.setModelNow(this.resolve(this.pendingSlot))
         this.swapping = false
         this.spinBoost += 4
       }
@@ -373,6 +451,8 @@ export class Stage {
       this.crumbs!.setMatrixAt(i, this.crumbMatrix)
     })
     this.crumbs.instanceMatrix.needsUpdate = true
+    // Drawn crumbs next to a captured piece would only give the drawing away.
+    if (this.current?.real) { this.crumbs.visible = false; return }
     // Crumbs are cooked whatever the drumstick is doing — except in the ritual, where
     // they follow it, so a raw piece of chicken is not surrounded by golden crumbs.
     if (this.crumbUniforms) {

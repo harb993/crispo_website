@@ -14,6 +14,10 @@ export type ModelName = 'drumstick' | 'burger' | 'fries' | 'can'
 
 export interface Model {
   name: ModelName
+  /** Unique per object on the stage — `cg:burger`, `real:drumstick-raw`. */
+  key: string
+  /** A capture rather than a procedural model: no crumbs, no cook uniforms. */
+  real?: boolean
   group: THREE.Group
   /** The resting tilt, in radians, before the pointer adds its own. */
   tilt: number
@@ -112,7 +116,7 @@ export function drumstick(q: Quality): Model {
   normalize(group, 1)
 
   const cook = mat.userData.crust
-  return { name: 'drumstick', group, tilt: -0.62, spin: 0.32, cook, timed: [cook], dispose: disposer(group) }
+  return { name: 'drumstick', key: 'cg:drumstick', group, tilt: -0.62, spin: 0.32, cook, timed: [cook], dispose: disposer(group) }
 }
 
 // ---------------------------------------------------------------------------
@@ -200,7 +204,7 @@ export function burger(q: Quality): Model {
 
   normalize(group, 1)
   const cook = filletMat.userData.crust
-  return { name: 'burger', group, tilt: 0.18, spin: 0.38, timed: [cook], dispose: disposer(group) }
+  return { name: 'burger', key: 'cg:burger', group, tilt: 0.18, spin: 0.38, timed: [cook], dispose: disposer(group) }
 }
 
 // ---------------------------------------------------------------------------
@@ -241,7 +245,7 @@ export function fries(q: Quality): Model {
 
   normalize(group, 1)
   const cook = friesMat.userData.crust
-  return { name: 'fries', group, tilt: 0.14, spin: 0.42, timed: [cook], dispose: disposer(group) }
+  return { name: 'fries', key: 'cg:fries', group, tilt: 0.14, spin: 0.42, timed: [cook], dispose: disposer(group) }
 }
 
 // ---------------------------------------------------------------------------
@@ -257,7 +261,7 @@ export function can(q: Quality): Model {
   const group = new THREE.Group()
   group.add(mesh)
   normalize(group, 1)
-  return { name: 'can', group, tilt: -0.22, spin: 0.6, timed: [], dispose: disposer(group) }
+  return { name: 'can', key: 'cg:can', group, tilt: -0.22, spin: 0.6, timed: [], dispose: disposer(group) }
 }
 
 export const BUILDERS: Record<ModelName, (q: Quality) => Model> = { drumstick, burger, fries, can }
