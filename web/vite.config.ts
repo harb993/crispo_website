@@ -14,7 +14,9 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     emptyOutDir: true,
-    target: 'es2022',
+    // Safari 15 is the oldest with WebGL 2, which three.js needs — plenty of customers'
+    // iPhones are a few iOS versions behind.
+    target: ['safari15', 'chrome100', 'edge100', 'firefox100'],
     // The splat renderer is one large lazy chunk, loaded only when a capture exists.
     chunkSizeWarningLimit: 3200,
   },

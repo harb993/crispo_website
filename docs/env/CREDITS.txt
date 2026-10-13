@@ -1,0 +1,2 @@
+studio.exr — "studio" HDRI from Poly Haven (https://polyhaven.com), CC0 1.0,
+as distributed in the @pmndrs/assets npm package (CC0-1.0).

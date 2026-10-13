@@ -47,7 +47,13 @@ labelled تجريبي, for any static host:
 
 ```bash
 npm run build:demo   # → dist-demo/ (relative paths, #track-<id> links, no WebAssembly)
+npm run build:pages  # → ../docs/, for GitHub Pages
 ```
+
+The repo carries a built copy in `docs/` so GitHub Pages can serve it with no workflow:
+**Settings → Pages → Deploy from a branch → this branch, `/docs`**. It then lives at
+`https://<user>.github.io/<repo>/`. Run `npm run build:pages` and commit `docs/` after
+changing the site, or the link keeps showing the old version.
 
 ```bash
 npm test             # relay tests (pricing, tampering, idempotency, auth, expiry)

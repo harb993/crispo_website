@@ -3,10 +3,12 @@
  * A self-contained demo of the site, for any static host — no relay behind it.
  *
  *   npm run build:demo        → dist-demo/
+ *   npm run build:pages       → ../docs/  (GitHub Pages: "Deploy from a branch", /docs)
+ *   … -- --fragment           index.html as a body fragment, for hosts that supply
+ *                             their own document skeleton (a claude.ai artifact)
  *
- * The pretend kitchen runs in the browser (site/src/lib/demo.ts), assets are relative,
- * tracking links are `#track-<id>`, and index.html is written as a body fragment for
- * hosts that supply their own document skeleton.
+ * The pretend kitchen runs in the browser (site/src/lib/demo.ts), assets are relative
+ * and tracking links are `#track-<id>`, so it works from any sub-path.
  *
  * It is also built for a host that serves only ordinary web file types and refuses
  * WebAssembly: the drumstick ships as its phone version with no meshopt, its textures
@@ -22,7 +24,10 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { MeshoptDecoder } from 'meshoptimizer'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const out = path.join(root, 'dist-demo')
+const args = process.argv.slice(2)
+const outArg = args.indexOf('--out')
+const out = path.resolve(root, outArg >= 0 ? args[outArg + 1] : 'dist-demo')
+const fragment = args.includes('--fragment')
 
 execFileSync(process.execPath, [path.join(root, 'node_modules/vite/bin/vite.js'), 'build', '--base', './', '--outDir', out], {
   cwd: root,
@@ -79,14 +84,22 @@ if (fs.existsSync(exr)) {
   fs.rmSync(exr)
 }
 
-// index.html → a fragment: the host wraps it in its own <html><head><body>.
 const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8')
-const head = /<head>([\s\S]*?)<\/head>/i.exec(html)[1]
-  .replace(/<meta charset[^>]*>\s*/i, '')
-  .replace(/<meta name="viewport"[^>]*>\s*/i, '')
-  .replace(/<title>[\s\S]*?<\/title>/i, '<title>Crispo</title>')
-const body = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html)[1]
-fs.writeFileSync(path.join(out, 'index.html'), `${head.trim()}\n${body.trim()}\n`)
+if (fragment) {
+  // The host wraps the page in its own <html><head><body>.
+  const head = /<head>([\s\S]*?)<\/head>/i.exec(html)[1]
+    .replace(/<meta charset[^>]*>\s*/i, '')
+    .replace(/<meta name="viewport"[^>]*>\s*/i, '')
+    .replace(/<title>[\s\S]*?<\/title>/i, '<title>Crispo</title>')
+  const body = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html)[1]
+  fs.writeFileSync(path.join(out, 'index.html'), `${head.trim()}\n${body.trim()}\n`)
+} else {
+  // A demo is not the restaurant: keep it out of search results.
+  fs.writeFileSync(path.join(out, 'index.html'), html.replace(/(<meta charset[^>]*>)/i, '$1\n  <meta name="robots" content="noindex" />'))
+  fs.rmSync(path.join(out, 'robots.txt'), { force: true })
+  // GitHub Pages: serve the files as they are, without a Jekyll pass.
+  fs.writeFileSync(path.join(out, '.nojekyll'), '')
+}
 
 const files = []
 const walk = d => {

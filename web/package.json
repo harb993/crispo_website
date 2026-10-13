@@ -16,7 +16,8 @@
     "test": "node --test relay/test/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "model": "node tools/prepare-model.mjs",
-    "build:demo": "node tools/build-demo.mjs"
+    "build:demo": "node tools/build-demo.mjs",
+    "build:pages": "node tools/build-demo.mjs --out ../docs"
   },
   "dependencies": {
     "@sparkjsdev/spark": "2.2.0",

@@ -1,0 +1,8 @@
+{
+  "normalScale": 0.9,
+  "map": "drumstick-albedo.webp",
+  "normalMap": "drumstick-normal.webp",
+  "metalnessMap": "drumstick-orm.webp",
+  "roughnessMap": "drumstick-orm.webp",
+  "clearcoatMap": "drumstick-orm.webp"
+}
